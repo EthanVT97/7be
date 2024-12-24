@@ -1,5 +1,5 @@
 <?php
-require_once '../config.php';
+require_once __DIR__ . '/../includes/config.php';
 
 try {
     $pdo = new PDO(
