@@ -1,148 +1,124 @@
 import config from '../config.js';
+import ErrorHandler from './errorHandler.js';
 import { monitoring } from './monitoring.js';
-import { security } from './security.js';
 
 class ApiService {
     constructor() {
-        this.rateLimiter = {
-            requests: [],
-            checkLimit() {
-                const now = Date.now();
-                this.requests = this.requests.filter(time => 
-                    time > now - config.RATE_LIMIT.TIME_WINDOW
-                );
-                return this.requests.length < config.RATE_LIMIT.MAX_REQUESTS;
+        this.baseURL = config.API_BASE_URL;
+        this.retryAttempts = 0;
+    }
+
+    async call(endpoint, method = 'GET', data = null) {
+        const startTime = performance.now();
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            addRequest() {
-                this.requests.push(Date.now());
-            }
+            credentials: 'include'
         };
-    }
 
-    getRetryStrategy(endpoint) {
-        // Find matching endpoint configuration
-        const endpointConfig = Object.values(config.ENDPOINTS).find(category => 
-            Object.values(category).includes(endpoint)
-        );
-
-        switch (endpointConfig?.RETRY_STRATEGY) {
-            case 'immediate':
-                return { delays: [0, 0, 0] };
-            case 'timeout':
-                return { delays: [1000, 3000, 5000] };
-            case 'backoff':
-            default:
-                return { delays: [1000, 2000, 4000] };
+        if (data) {
+            options.body = JSON.stringify(data);
         }
-    }
 
-    async call(endpoint, method = 'GET', data = null, retryCount = 0) {
-        const startTime = Date.now();
-        const retryStrategy = this.getRetryStrategy(endpoint);
+        // Add session token if available
+        const sessionToken = localStorage.getItem('sessionToken');
+        if (sessionToken) {
+            options.headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
 
         try {
-            // Check rate limit
-            if (!this.rateLimiter.checkLimit()) {
-                throw new Error('RATE_LIMIT_EXCEEDED');
-            }
-            this.rateLimiter.addRequest();
+            const response = await this._fetchWithTimeout(
+                `${this.baseURL}${endpoint}`,
+                options
+            );
 
-            // Prepare request
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
+            const endTime = performance.now();
+            monitoring.logApiCall(endpoint, endTime - startTime, response.status);
 
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // Set up timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), config.REQUEST_TIMEOUT);
-
-            // Make request
-            const response = await fetch(`${config.API_BASE_URL}${endpoint}`, {
-                method,
-                headers,
-                body: data ? JSON.stringify(data) : null,
-                signal: controller.signal,
-                credentials: 'include'
-            });
-
-            clearTimeout(timeoutId);
-
-            // Handle response
             if (!response.ok) {
-                const error = new Error(response.statusText);
-                error.status = response.status;
-                throw error;
+                throw await this._handleHttpError(response);
             }
 
-            const result = await response.json();
-
-            // Log performance
-            const duration = Date.now() - startTime;
-            monitoring.logPerformance(endpoint, duration);
-
-            return result;
-
+            return await response.json();
         } catch (error) {
-            // Log error
-            monitoring.logError(error, endpoint, { method, retryCount });
-
-            // Handle specific error types
-            switch (error.message) {
-                case 'RATE_LIMIT_EXCEEDED':
-                    throw new Error('Rate limit exceeded. Please try again later.');
-
-                case 'AbortError':
-                    throw new Error('Request timeout');
-
-                default:
-                    // Handle HTTP status codes
-                    switch (error.status) {
-                        case 401:
-                            // Try token refresh on first 401
-                            if (retryCount === 0) {
-                                await security.refreshToken();
-                                return this.call(endpoint, method, data, retryCount + 1);
-                            }
-                            throw new Error('Authentication failed');
-
-                        case 403:
-                            throw new Error('Access denied');
-
-                        case 429:
-                            // Handle rate limiting with retry-after
-                            const retryAfter = parseInt(response.headers.get('Retry-After')) || 5;
-                            if (retryCount < config.MAX_RETRIES) {
-                                await new Promise(resolve => 
-                                    setTimeout(resolve, retryAfter * 1000)
-                                );
-                                return this.call(endpoint, method, data, retryCount + 1);
-                            }
-                            throw new Error('Rate limit exceeded');
-
-                        case 500:
-                        case 502:
-                        case 503:
-                        case 504:
-                            // Retry server errors with backoff
-                            if (retryCount < retryStrategy.delays.length) {
-                                await new Promise(resolve => 
-                                    setTimeout(resolve, retryStrategy.delays[retryCount])
-                                );
-                                return this.call(endpoint, method, data, retryCount + 1);
-                            }
-                            throw new Error('Server error. Please try again later.');
-
-                        default:
-                            throw error;
-                    }
+            if (this.retryAttempts < config.MAX_RETRY_ATTEMPTS) {
+                this.retryAttempts++;
+                return await this.call(endpoint, method, data);
             }
+            
+            this.retryAttempts = 0;
+            throw error;
         }
+    }
+
+    async _fetchWithTimeout(url, options) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, config.REQUEST_TIMEOUT);
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            return response;
+        } catch (error) {
+            clearTimeout(timeout);
+            throw error;
+        }
+    }
+
+    async _handleHttpError(response) {
+        const error = new Error();
+        error.status = response.status;
+        
+        try {
+            const data = await response.json();
+            error.message = data.message || response.statusText;
+        } catch {
+            error.message = response.statusText;
+        }
+
+        monitoring.logError(error);
+        return error;
+    }
+
+    // Authentication methods
+    async login(username, password) {
+        const response = await this.call(config.ENDPOINTS.AUTH.LOGIN, 'POST', {
+            username,
+            password
+        });
+
+        if (response.token) {
+            localStorage.setItem('sessionToken', response.token);
+            document.dispatchEvent(new CustomEvent('authStateChanged', {
+                detail: { isAuthenticated: true }
+            }));
+        }
+
+        return response;
+    }
+
+    async logout() {
+        await this.call(config.ENDPOINTS.AUTH.LOGOUT, 'POST');
+        localStorage.removeItem('sessionToken');
+        document.dispatchEvent(new CustomEvent('authStateChanged', {
+            detail: { isAuthenticated: false }
+        }));
+    }
+
+    async register(userData) {
+        return await this.call(config.ENDPOINTS.AUTH.REGISTER, 'POST', userData);
+    }
+
+    isAuthenticated() {
+        return !!localStorage.getItem('sessionToken');
     }
 }
 
