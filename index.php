@@ -1,5 +1,5 @@
 <?php
-// Enable error reporting
+// Enable error reporting for debugging
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -7,7 +7,18 @@ error_reporting(E_ALL);
 define('INCLUDED_FROM_INDEX', true);
 
 // Include configuration
-require_once __DIR__ . '/config.php';
+$configFile = __DIR__ . '/includes/config.php';
+if (!file_exists($configFile)) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Configuration file not found',
+        'debug' => 'Missing: ' . $configFile
+    ]);
+    exit;
+}
+
+require_once $configFile;
 
 // Set headers
 header('Content-Type: application/json');
@@ -23,12 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 try {
     // Test database connection
-    $conn = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+    if (!isset($conn)) {
+        $conn = new PDO(
+            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+            DB_USER,
+            DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+    }
 
     // Basic response
     $response = [
