@@ -1,165 +1,143 @@
 <?php
-// Enable error reporting for debugging
+// Enable error reporting for development
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Debug logging
-error_log("=== API Request Start ===");
-error_log("Method: " . $_SERVER['REQUEST_METHOD']);
-error_log("URI: " . $_SERVER['REQUEST_URI']);
-error_log("Query String: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
-error_log("Script: " . $_SERVER['SCRIPT_NAME']);
-error_log("GET params raw: " . print_r($_GET, true));
-error_log("Server variables: " . print_r($_SERVER, true));
-
-// Handle CORS
+// Set headers
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, Accept');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
+// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Define constants
-define('INCLUDED_FROM_INDEX', true);
-define('API_REQUEST', true);
-
-// Include configuration
-require_once __DIR__ . '/../includes/config.php';
-
-// Get action and subaction directly from query string
-$query_string = $_SERVER['QUERY_STRING'] ?? '';
-parse_str($query_string, $query_params);
-$action = isset($query_params['action']) ? trim($query_params['action']) : '';
-$subaction = isset($query_params['subaction']) ? trim($query_params['subaction']) : '';
-
-error_log("Query string parsed: " . print_r($query_params, true));
-error_log("Action (parsed): " . $action);
-error_log("Subaction: " . $subaction);
-
-// Initialize response
-$response = ['status' => 'error', 'message' => 'Invalid request'];
-
-try {
-    // Test database connection
-    if (!isset($conn)) {
-        $conn = new PDO(
-            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-            DB_USER,
-            DB_PASS,
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-        );
+// Authentication handling
+function getAuthToken() {
+    $headers = getallheaders();
+    if (isset($headers['Authorization'])) {
+        return str_replace('Bearer ', '', $headers['Authorization']);
     }
-
-    error_log("Database connected successfully");
-
-    // Handle different routes
-    switch ($action) {
-        case 'results':
-            error_log("Handling results route");
-            if ($subaction === 'latest') {
-                $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 1");
-                $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($result) {
-                    $response = [
-                        'status' => 'success',
-                        'data' => $result
-                    ];
-                } else {
-                    $response = [
-                        'status' => 'error',
-                        'message' => 'No results found'
-                    ];
-                }
-            } else {
-                $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 10");
-                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                $response = [
-                    'status' => 'success',
-                    'data' => $results
-                ];
-            }
-            break;
-
-        case 'status':
-            error_log("Handling status route");
-            $response = [
-                'status' => 'success',
-                'message' => 'API is working',
-                'server_time' => date('Y-m-d H:i:s'),
-                'timezone' => date_default_timezone_get(),
-                'db_connected' => true,
-                'version' => '1.0.0',
-                'debug' => [
-                    'method' => $_SERVER['REQUEST_METHOD'],
-                    'uri' => $_SERVER['REQUEST_URI'],
-                    'query_string' => $query_string,
-                    'query_params' => $query_params,
-                    'action' => $action,
-                    'subaction' => $subaction,
-                    'get_params' => $_GET,
-                    'script_name' => $_SERVER['SCRIPT_NAME'],
-                    'request_uri' => $_SERVER['REQUEST_URI'],
-                    'php_self' => $_SERVER['PHP_SELF']
-                ]
-            ];
-            break;
-
-        case '':
-            error_log("Handling root route");
-            $response = [
-                'status' => 'success',
-                'message' => 'Welcome to 2D3D Lottery API',
-                'version' => '1.0.0',
-                'endpoints' => [
-                    '/api/?action=status',
-                    '/api/?action=results',
-                    '/api/?action=results&subaction=latest'
-                ],
-                'debug' => [
-                    'method' => $_SERVER['REQUEST_METHOD'],
-                    'uri' => $_SERVER['REQUEST_URI'],
-                    'query_string' => $query_string,
-                    'get_params' => $_GET
-                ]
-            ];
-            break;
-
-        default:
-            error_log("Invalid route (default case): " . $action);
-            throw new Exception("Invalid action: " . $action);
-    }
-} catch (PDOException $e) {
-    error_log("Database Error: " . $e->getMessage());
-    $response = [
-        'status' => 'error',
-        'message' => 'Database error',
-        'debug' => [
-            'error' => $e->getMessage(),
-            'host' => DB_HOST,
-            'database' => DB_NAME,
-            'query_string' => $query_string,
-            'action' => $action
-        ]
-    ];
-} catch (Exception $e) {
-    error_log("Server Error: " . $e->getMessage());
-    $response = [
-        'status' => 'error',
-        'message' => $e->getMessage(),
-        'debug' => [
-            'query_string' => $query_string,
-            'action' => $action,
-            'uri' => $_SERVER['REQUEST_URI']
-        ]
-    ];
+    return null;
 }
 
-error_log("=== Final Response ===");
-error_log(json_encode($response));
+function validateToken($token) {
+    // TODO: Replace with your actual token validation logic
+    // This is a simple example - you should use proper JWT validation
+    $validTokens = ['your-secret-token-1', 'your-secret-token-2'];
+    return in_array($token, $validTokens);
+}
 
-// Send response
-echo json_encode($response);
+// Input validation
+function validateInput($params) {
+    $errors = [];
+    
+    // Validate action parameter
+    if (!isset($params['action'])) {
+        $errors[] = 'Action parameter is required';
+    } else {
+        $validActions = ['status', 'getResults', 'updateResults'];
+        if (!in_array($params['action'], $validActions)) {
+            $errors[] = 'Invalid action specified';
+        }
+    }
+    
+    // Validate date format if provided
+    if (isset($params['date'])) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $params['date'])) {
+            $errors[] = 'Invalid date format. Use YYYY-MM-DD';
+        }
+    }
+    
+    return $errors;
+}
+
+// Error response helper
+function sendError($message, $code = 400) {
+    http_response_code($code);
+    echo json_encode([
+        'status' => 'error',
+        'message' => $message,
+        'timestamp' => date('Y-m-d\TH:i:sP'),
+        'code' => $code
+    ]);
+    exit();
+}
+
+// Success response helper
+function sendSuccess($data, $message = 'Success') {
+    echo json_encode([
+        'status' => 'success',
+        'message' => $message,
+        'data' => $data,
+        'timestamp' => date('Y-m-d\TH:i:sP'),
+        'request' => [
+            'uri' => $_SERVER['REQUEST_URI'],
+            'method' => $_SERVER['REQUEST_METHOD'],
+            'params' => $_GET
+        ]
+    ]);
+    exit();
+}
+
+try {
+    // Log request details
+    error_log("Request URI: " . $_SERVER['REQUEST_URI']);
+    error_log("Query String: " . $_SERVER['QUERY_STRING']);
+    error_log("GET params: " . print_r($_GET, true));
+    
+    // Validate input
+    $validationErrors = validateInput($_GET);
+    if (!empty($validationErrors)) {
+        sendError($validationErrors);
+    }
+    
+    // Check authentication for protected endpoints
+    $protectedActions = ['updateResults'];
+    if (in_array($_GET['action'], $protectedActions)) {
+        $token = getAuthToken();
+        if (!$token) {
+            sendError('Authentication token required', 401);
+        }
+        if (!validateToken($token)) {
+            sendError('Invalid authentication token', 401);
+        }
+    }
+    
+    // Handle different actions
+    switch ($_GET['action']) {
+        case 'status':
+            sendSuccess([
+                'serverTime' => date('Y-m-d\TH:i:sP'),
+                'status' => 'operational',
+                'version' => '1.0.0'
+            ]);
+            break;
+            
+        case 'getResults':
+            // TODO: Implement results retrieval logic
+            sendSuccess([
+                'results' => [],
+                'lastUpdated' => date('Y-m-d\TH:i:sP')
+            ]);
+            break;
+            
+        case 'updateResults':
+            // TODO: Implement results update logic
+            sendSuccess([
+                'updated' => true,
+                'timestamp' => date('Y-m-d\TH:i:sP')
+            ]);
+            break;
+            
+        default:
+            sendError('Invalid action specified');
+    }
+    
+} catch (Exception $e) {
+    error_log("API Error: " . $e->getMessage());
+    sendError('Internal server error', 500);
+}
