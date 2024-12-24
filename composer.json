@@ -1,0 +1,9 @@
+{
+    "name": "2d3dkobo/lottery-api",
+    "description": "Lottery API for 2D3D Kobo",
+    "require": {
+        "php": "^8.0",
+        "ext-pdo": "*",
+        "ext-json": "*"
+    }
+}
