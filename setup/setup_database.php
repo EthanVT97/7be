@@ -74,14 +74,28 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
-        title VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
         type ENUM('info', 'success', 'warning', 'error') DEFAULT 'info',
         is_read BOOLEAN DEFAULT FALSE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     echo "Notifications table created successfully<br>";
+
+    // Create API logs table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS api_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        request_method VARCHAR(10) NOT NULL,
+        request_path VARCHAR(255) NOT NULL,
+        request_body TEXT,
+        response_code INT,
+        response_body TEXT,
+        ip_address VARCHAR(45),
+        user_agent VARCHAR(255),
+        duration FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    echo "API logs table created successfully<br>";
 
     // Create default admin user
     $adminPassword = password_hash('admin123', PASSWORD_DEFAULT);

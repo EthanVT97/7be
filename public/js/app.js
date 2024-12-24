@@ -1,216 +1,166 @@
-// Main application logic
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-});
+// Import configuration
+import config from './config.js';
+import { api } from './services/api.js';
+import { security } from './services/security.js';
+import { monitoring } from './services/monitoring.js';
 
-// Global variables
-const API_BASE_URL = 'http://localhost:8000/api';
-let authToken = localStorage.getItem('authToken');
-let refreshInterval;
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeApp);
 
-// DOM Elements
-const loginBtn = document.getElementById('loginBtn');
-const registerBtn = document.getElementById('registerBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
-const loginForm = document.getElementById('loginForm');
-const registerForm = document.getElementById('registerForm');
-const liveResults = document.getElementById('liveResults');
-const mainContent = document.getElementById('mainContent');
-const loadingSpinner = document.createElement('div');
-loadingSpinner.className = 'loading';
-
-// Helper function to call API
-async function callApi(endpoint, method = 'GET', data = null) {
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method,
-            headers,
-            body: data ? JSON.stringify(data) : null
-        });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                authToken = null;
-                localStorage.removeItem('authToken');
-                updateAuthUI(false);
-                throw new Error('Authentication failed');
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('API call failed:', error);
-        showAlert(error.message, 'danger');
-        throw error;
-    }
-}
-
-// Event Listeners
-if (loginBtn) loginBtn.addEventListener('click', () => loginModal.show());
-if (registerBtn) registerBtn.addEventListener('click', () => registerModal.show());
-if (logoutBtn) logoutBtn.addEventListener('click', logout);
-
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(loginForm);
-        try {
-            const response = await callApi('/auth/login', 'POST', {
-                username: formData.get('username'),
-                password: formData.get('password')
-            });
-            
-            if (response.token) {
-                authToken = response.token;
-                localStorage.setItem('authToken', authToken);
-                loginModal.hide();
-                updateAuthUI(true);
-                showAlert('Login successful!', 'success');
-                loadLiveResults();
-            }
-        } catch (error) {
-            showAlert('Login failed: ' + error.message, 'danger');
-        }
-    });
-}
-
-if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(registerForm);
-        const password = formData.get('password');
-        const confirmPassword = formData.get('confirmPassword');
-        
-        if (password !== confirmPassword) {
-            showAlert('Passwords do not match!', 'danger');
-            return;
-        }
-        
-        try {
-            const response = await callApi('/auth/register', 'POST', {
-                username: formData.get('username'),
-                password: password,
-                email: formData.get('email')
-            });
-            
-            registerModal.hide();
-            showAlert('Registration successful! Please login.', 'success');
-        } catch (error) {
-            showAlert('Registration failed: ' + error.message, 'danger');
-        }
-    });
-}
-
-// Functions
-async function loadLiveResults() {
-    try {
-        liveResults.appendChild(loadingSpinner);
-        const results = await callApi('/lottery/results');
-        
-        const resultsHtml = results.map(result => `
-            <div class="col-md-4">
-                <div class="result-box">
-                    <h3>${result.type} Draw</h3>
-                    <div class="result-number">${result.number}</div>
-                    <div class="result-time">${formatDateTime(result.draw_time)}</div>
-                </div>
-            </div>
-        `).join('');
-        
-        liveResults.innerHTML = `
-            <div class="row">
-                ${resultsHtml}
-            </div>
-        `;
-    } catch (error) {
-        liveResults.innerHTML = '<div class="alert alert-danger">Failed to load results</div>';
-    } finally {
-        if (liveResults.contains(loadingSpinner)) {
-            liveResults.removeChild(loadingSpinner);
-        }
-    }
-}
-
-function loadPage(page) {
-    mainContent.appendChild(loadingSpinner);
-    fetch(`pages/${page}.html`)
-        .then(response => response.text())
-        .then(html => {
-            mainContent.innerHTML = html;
-            if (page === 'home') {
-                loadLiveResults();
-            }
-        })
-        .catch(error => {
-            mainContent.innerHTML = '<div class="alert alert-danger">Failed to load page</div>';
-        })
-        .finally(() => {
-            if (mainContent.contains(loadingSpinner)) {
-                mainContent.removeChild(loadingSpinner);
-            }
-        });
-}
-
-function updateAuthUI(isLoggedIn) {
-    const authElements = document.querySelectorAll('.auth-required');
-    const guestElements = document.querySelectorAll('.guest-only');
-    
-    authElements.forEach(element => {
-        element.style.display = isLoggedIn ? '' : 'none';
-    });
-    
-    guestElements.forEach(element => {
-        element.style.display = isLoggedIn ? 'none' : '';
-    });
-    
-    if (isLoggedIn) {
+// Handle authentication state changes
+document.addEventListener('authStateChanged', (event) => {
+    updateAuthUI(event.detail.isAuthenticated);
+    if (event.detail.isAuthenticated) {
+        loadLiveResults();
         startAutoRefresh();
     } else {
         stopAutoRefresh();
     }
-}
+});
 
-function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const alertContainer = document.getElementById('alertContainer');
-    if (alertContainer) {
-        alertContainer.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 5000);
+async function loadLiveResults() {
+    try {
+        const results = await api.call(config.ENDPOINTS.LOTTERY.LIVE);
+        const liveResultsDiv = document.getElementById('liveResults');
+        
+        if (results.data && results.data.length > 0) {
+            liveResultsDiv.innerHTML = results.data.map(result => `
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${result.type} Result</h5>
+                            <p class="card-text">Number: ${result.number}</p>
+                            <p class="card-text">Time: ${formatDateTime(result.created_at)}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            liveResultsDiv.innerHTML = '<p class="text-center">No results available</p>';
+        }
+    } catch (error) {
+        showAlert('Error loading results: ' + error.message, 'danger');
     }
 }
 
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const username = event.target.username.value;
+    const password = event.target.password.value;
+
+    // Check login attempts
+    const loginCheck = security.checkLoginAttempts(username);
+    if (!loginCheck.allowed) {
+        showAlert(loginCheck.message, 'danger');
+        return;
+    }
+
+    try {
+        // Validate password
+        const passwordCheck = security.validatePassword(password);
+        if (!passwordCheck.valid) {
+            showAlert(passwordCheck.message, 'danger');
+            return;
+        }
+
+        // Authenticate with Firebase
+        const auth = window.firebaseAuth;
+        const userCredential = await auth.signInWithEmailAndPassword(username, password);
+        const token = await userCredential.user.getIdToken();
+
+        // Authenticate with backend
+        const response = await api.call(config.ENDPOINTS.AUTH.LOGIN, 'POST', {
+            username,
+            token
+        });
+
+        security.recordLoginAttempt(username, true);
+        bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+        showAlert('Login successful!', 'success');
+
+    } catch (error) {
+        security.recordLoginAttempt(username, false);
+        showAlert('Login failed: ' + error.message, 'danger');
+    }
+}
+
+async function handleRegister(event) {
+    event.preventDefault();
+    
+    const username = event.target.username.value;
+    const email = event.target.email.value;
+    const password = event.target.password.value;
+    const confirmPassword = event.target.confirmPassword.value;
+
+    try {
+        // Validate password
+        if (password !== confirmPassword) {
+            throw new Error('Passwords do not match');
+        }
+
+        const passwordCheck = security.validatePassword(password);
+        if (!passwordCheck.valid) {
+            throw new Error(passwordCheck.message);
+        }
+
+        // Register with Firebase
+        const auth = window.firebaseAuth;
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const token = await userCredential.user.getIdToken();
+
+        // Register with backend
+        await api.call(config.ENDPOINTS.AUTH.REGISTER, 'POST', {
+            username,
+            email,
+            token
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+        showAlert('Registration successful! Please log in.', 'success');
+
+    } catch (error) {
+        showAlert('Registration failed: ' + error.message, 'danger');
+    }
+}
+
+async function handleLogout() {
+    try {
+        await api.call(config.ENDPOINTS.AUTH.LOGOUT, 'POST');
+        await window.firebaseAuth.signOut();
+        showAlert('Logged out successfully', 'success');
+    } catch (error) {
+        showAlert('Logout failed: ' + error.message, 'danger');
+    }
+}
+
+function updateAuthUI(isAuthenticated) {
+    const authRequired = document.querySelectorAll('.auth-required');
+    const guestOnly = document.querySelectorAll('.guest-only');
+    
+    authRequired.forEach(el => el.style.display = isAuthenticated ? '' : 'none');
+    guestOnly.forEach(el => el.style.display = isAuthenticated ? 'none' : '');
+}
+
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
 function formatDateTime(dateTime) {
-    const options = {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-    return new Date(dateTime).toLocaleDateString('en-US', options);
+    return new Date(dateTime).toLocaleString();
 }
 
 function startAutoRefresh() {
-    loadLiveResults();
-    refreshInterval = setInterval(loadLiveResults, 60000); // Refresh every minute
+    stopAutoRefresh();
+    refreshInterval = setInterval(loadLiveResults, config.REFRESH_INTERVAL);
 }
 
 function stopAutoRefresh() {
@@ -219,24 +169,19 @@ function stopAutoRefresh() {
     }
 }
 
-function logout() {
-    authToken = null;
-    localStorage.removeItem('authToken');
-    updateAuthUI(false);
-    showAlert('Logged out successfully', 'info');
-}
-
-// Initialize the application
 function initializeApp() {
-    // Check if user is logged in
+    // Add event listeners
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    document.getElementById('registerForm').addEventListener('submit', handleRegister);
+    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+    // Initialize security service
+    security.setupTokenRefresh();
+
+    // Load initial data if token exists
     const token = localStorage.getItem('authToken');
     if (token) {
-        authToken = token;
-        updateAuthUI(true);
-    } else {
-        updateAuthUI(false);
+        loadLiveResults();
+        startAutoRefresh();
     }
-    
-    // Load initial page
-    loadPage('home');
 }

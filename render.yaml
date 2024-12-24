@@ -1,15 +1,38 @@
 services:
+  # Backend API Service
   - type: web
     name: lottery-api
-    env: php
-    buildCommand: composer install
-    startCommand: php -S 0.0.0.0:$PORT -t public/
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: starter
+    healthCheckPath: /api/health
     envVars:
       - key: DB_HOST
-        sync: false
+        value: sql12.freesqldatabase.com
       - key: DB_NAME
-        sync: false
+        value: sql12753941
       - key: DB_USER
-        sync: false
+        value: sql12753941
       - key: DB_PASS
-        sync: false
+        value: xPMZuuk5AZ
+
+  # Frontend Service
+  - type: web
+    name: lottery-frontend
+    env: docker
+    dockerfilePath: ./Dockerfile.frontend
+    region: singapore
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_URL
+        fromService:
+          name: lottery-api
+          type: web
+          property: url
+    buildCommand: npm run build
+    startCommand: nginx -g 'daemon off;'
+    autoDeploy: true
