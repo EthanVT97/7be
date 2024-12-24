@@ -1,20 +1,13 @@
 RewriteEngine On
-RewriteBase /api/
+
+# Enable CORS
+Header set Access-Control-Allow-Origin "*"
 
 # Handle Authorization Header
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Enable CORS
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-Header set Access-Control-Allow-Headers "Content-Type, Authorization"
-
-# Pass all requests to index.php with query string
+# Pass all requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]
-
-# Set environment variables for debugging
-SetEnv QUERY_STRING %{QUERY_STRING}e
-SetEnv REQUEST_URI %{REQUEST_URI}e
