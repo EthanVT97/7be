@@ -4,7 +4,11 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 // Debug logging
-error_log("API Request - Method: " . $_SERVER['REQUEST_METHOD'] . ", URI: " . $_SERVER['REQUEST_URI']);
+error_log("=== API Request Start ===");
+error_log("Method: " . $_SERVER['REQUEST_METHOD']);
+error_log("URI: " . $_SERVER['REQUEST_URI']);
+error_log("Query String: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
+error_log("Script: " . $_SERVER['SCRIPT_NAME']);
 error_log("GET params: " . json_encode($_GET));
 
 // Handle CORS
@@ -28,12 +32,18 @@ define('API_REQUEST', true);
 // Include configuration
 require_once __DIR__ . '/../includes/config.php';
 
-// Get the action from query parameter
-$action = $_GET['action'] ?? '';
-$subaction = $_GET['subaction'] ?? '';
+// Parse request
+$parts = parse_url($_SERVER['REQUEST_URI']);
+$path = $parts['path'] ?? '';
+$query = [];
+parse_str($parts['query'] ?? '', $query);
 
-// Debug logging
-error_log("Action: " . $action . ", Subaction: " . $subaction);
+// Get action from either query string or path
+$action = $query['action'] ?? '';
+$subaction = $query['subaction'] ?? '';
+
+error_log("Parsed action: " . $action);
+error_log("Parsed subaction: " . $subaction);
 
 // Initialize response
 $response = ['status' => 'error', 'message' => 'Invalid request'];
@@ -49,9 +59,13 @@ try {
         );
     }
 
+    error_log("Database connected successfully");
+    error_log("Processing route: " . $action);
+
     // Handle different routes
     switch ($action) {
         case 'results':
+            error_log("Handling results route");
             if ($subaction === 'latest') {
                 $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 1");
                 $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -85,7 +99,15 @@ try {
                 'timezone' => date_default_timezone_get(),
                 'db_connected' => true,
                 'db_host' => DB_HOST,
-                'version' => '1.0.0'
+                'version' => '1.0.0',
+                'debug' => [
+                    'method' => $_SERVER['REQUEST_METHOD'],
+                    'uri' => $_SERVER['REQUEST_URI'],
+                    'query' => $_SERVER['QUERY_STRING'] ?? '',
+                    'script' => $_SERVER['SCRIPT_NAME'],
+                    'action' => $action,
+                    'subaction' => $subaction
+                ]
             ];
             break;
 
@@ -111,6 +133,11 @@ try {
                     '/api/?action=results',
                     '/api/?action=results&subaction=latest',
                     '/api/?action=status'
+                ],
+                'debug' => [
+                    'requested_action' => $action,
+                    'uri' => $_SERVER['REQUEST_URI'],
+                    'query' => $_SERVER['QUERY_STRING'] ?? ''
                 ]
             ];
     }
@@ -132,8 +159,8 @@ try {
     ];
 }
 
-// Debug logging
-error_log("Response: " . json_encode($response));
+error_log("=== Final Response ===");
+error_log(json_encode($response));
 
 // Send response
 echo json_encode($response);
