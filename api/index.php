@@ -72,24 +72,37 @@ try {
         case 'status':
             $response = [
                 'status' => 'success',
-                'message' => 'API is running',
+                'message' => 'API is working',
                 'server_time' => date('Y-m-d H:i:s'),
                 'timezone' => date_default_timezone_get(),
                 'db_connected' => true,
-                'db_host' => DB_HOST
+                'db_host' => DB_HOST,
+                'version' => '1.0.0'
             ];
             break;
 
         default:
-            $response = [
-                'status' => 'error',
-                'message' => 'Invalid route',
-                'available_routes' => [
-                    '/api/?action=results',
-                    '/api/?action=results&subaction=latest',
-                    '/api/?action=status'
-                ]
-            ];
+            if (empty($route)) {
+                $response = [
+                    'status' => 'success',
+                    'message' => 'API is working',
+                    'server_time' => date('Y-m-d H:i:s'),
+                    'php_version' => PHP_VERSION,
+                    'request_method' => $_SERVER['REQUEST_METHOD'],
+                    'request_uri' => $_SERVER['REQUEST_URI'],
+                    'db_connected' => true
+                ];
+            } else {
+                $response = [
+                    'status' => 'error',
+                    'message' => 'Invalid route',
+                    'available_routes' => [
+                        '/api/?action=results',
+                        '/api/?action=results&subaction=latest',
+                        '/api/?action=status'
+                    ]
+                ];
+            }
     }
 } catch (PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
