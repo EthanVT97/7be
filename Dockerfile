@@ -8,7 +8,9 @@ RUN apt-get update && apt-get install -y \
 # PHP Configuration
 RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
     && echo "display_startup_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/error-reporting.ini
+    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/error-reporting.ini \
+    && echo "log_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
+    && echo "error_log = /dev/stderr" >> /usr/local/etc/php/conf.d/error-reporting.ini
 
 # Enable Apache modules
 RUN a2enmod rewrite headers
@@ -22,7 +24,7 @@ RUN echo '\
 \n\
     <Directory /var/www/html>\n\
         Options Indexes FollowSymLinks\n\
-        AllowOverride None\n\
+        AllowOverride All\n\
         Require all granted\n\
 \n\
         RewriteEngine On\n\
@@ -43,6 +45,12 @@ WORKDIR /var/www/html
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod 644 /var/www/html/*.php
+
+# Environment variables with defaults
+ENV DB_HOST=sql207.infinityfree.com \
+    DB_NAME=if0_37960691_if0_37960691_lottery \
+    DB_USER=if0_37960691 \
+    DB_PASS=j7Mw1ZKMjPD
 
 EXPOSE 80
 CMD ["apache2-foreground"]
