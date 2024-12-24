@@ -1,121 +1,144 @@
 <?php
-require_once 'includes/config.php';
-require_once 'includes/functions.php';
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Check if user is logged in
-session_start();
+$isLoggedIn = isset($_SESSION['user_id']);
 
-// Redirect to login if not authenticated
-if (!isset($_SESSION['user_id']) && !in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php'])) {
-    header('Location: login.php');
+// Set content type to JSON for API responses
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit();
 }
 
-include 'templates/header.php';
-?>
+// Get the requested path
+$request = $_SERVER['REQUEST_URI'];
+$path = parse_url($request, PHP_URL_PATH);
 
-<section class="hero">
-    <div class="hero-content">
-        <h1>Welcome to <?php echo SITE_NAME; ?></h1>
-        <p>Your trusted platform for 2D, 3D, Thai, and Laos lottery results</p>
-        <?php if (!isset($_SESSION['user_id'])): ?>
-            <div class="auth-buttons">
-                <a href="login.php" class="btn btn-primary">Login</a>
-                <a href="register.php" class="btn btn-secondary">Register</a>
-            </div>
-        <?php endif; ?>
-    </div>
-</section>
+// Remove leading slash and get path segments
+$path = ltrim($path, '/');
+$segments = explode('/', $path);
 
-<section class="features">
-    <div class="container">
-        <h2 class="text-center mb-5">Our Features</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>2D/3D Results</h3>
-                <p>Get instant access to the latest 2D and 3D lottery results</p>
-            </div>
-            <div class="feature-card">
-                <h3>Thai Lottery</h3>
-                <p>Stay updated with Thai lottery results and winning numbers</p>
-            </div>
-            <div class="feature-card">
-                <h3>Laos Lottery</h3>
-                <p>Access Laos lottery results quickly and easily</p>
-            </div>
-            <div class="feature-card">
-                <h3>Secure Payments</h3>
-                <p>Safe and secure payment processing for all transactions</p>
-            </div>
-        </div>
-    </div>
-</section>
+// Basic routing
+$route = $segments[0] ?? '';
 
-<?php if (isset($_SESSION['user_id'])): ?>
-<section class="dashboard container mt-5">
-    <div class="dashboard-card results-panel">
-        <h3>Latest Results</h3>
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active result-tab" data-target="#2d" href="#">2D</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link result-tab" data-target="#3d" href="#">3D</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link result-tab" data-target="#thai" href="#">Thai</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link result-tab" data-target="#laos" href="#">Laos</a>
-            </li>
-        </ul>
-        <div class="tab-content mt-3">
-            <div id="2d" class="result-content active">
-                <!-- 2D results will be loaded here -->
-            </div>
-            <div id="3d" class="result-content">
-                <!-- 3D results will be loaded here -->
-            </div>
-            <div id="thai" class="result-content">
-                <!-- Thai lottery results will be loaded here -->
-            </div>
-            <div id="laos" class="result-content">
-                <!-- Laos lottery results will be loaded here -->
-            </div>
-        </div>
-    </div>
+// Initialize response
+$response = ['status' => 'error', 'message' => 'Invalid request'];
 
-    <div class="dashboard-card">
-        <h3>Payment Upload</h3>
-        <form class="payment-form" action="upload_payment.php" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="amount">Amount</label>
-                <input type="number" class="form-control" id="amount" name="amount" required>
-            </div>
-            <div class="form-group">
-                <label for="payment_method">Payment Method</label>
-                <select class="form-control" id="payment_method" name="payment_method" required>
-                    <option value="">Select Payment Method</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                    <option value="mobile_payment">Mobile Payment</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="payment_proof">Payment Proof</label>
-                <input type="file" class="form-control payment-proof-input" id="payment_proof" name="payment_proof" required>
-                <div class="file-preview mt-2"></div>
-            </div>
-            <button type="submit" class="btn btn-primary">Upload Payment</button>
-        </form>
-    </div>
+try {
+    require_once 'config.php';
+    
+    $pdo = new PDO(
+        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+        DB_USER,
+        DB_PASS
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    <div class="dashboard-card notifications-panel">
-        <h3>Notifications</h3>
-        <div class="notifications-list">
-            <!-- Notifications will be loaded here -->
-        </div>
-    </div>
-</section>
-<?php endif; ?>
+    switch ($route) {
+        case '':
+        case 'home':
+            $response = [
+                'status' => 'success',
+                'data' => [
+                    'title' => 'Welcome to 2D3D Kobo',
+                    'isLoggedIn' => $isLoggedIn
+                ]
+            ];
+            break;
 
-<?php include 'templates/footer.php'; ?>
+        case 'login':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+                $stmt->execute([$data['username']]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($user && password_verify($data['password'], $user['password'])) {
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['username'] = $user['username'];
+                    
+                    $response = [
+                        'status' => 'success',
+                        'message' => 'Login successful',
+                        'user' => [
+                            'id' => $user['id'],
+                            'username' => $user['username']
+                        ]
+                    ];
+                } else {
+                    $response = [
+                        'status' => 'error',
+                        'message' => 'Invalid credentials'
+                    ];
+                }
+            }
+            break;
+
+        case 'logout':
+            session_destroy();
+            $response = [
+                'status' => 'success',
+                'message' => 'Logged out successfully'
+            ];
+            break;
+
+        case 'register':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                
+                // Check if username exists
+                $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+                $stmt->execute([$data['username']]);
+                if ($stmt->fetchColumn() > 0) {
+                    $response = [
+                        'status' => 'error',
+                        'message' => 'Username already exists'
+                    ];
+                    break;
+                }
+
+                // Create new user
+                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+                
+                if ($stmt->execute([$data['username'], $hashedPassword])) {
+                    $response = [
+                        'status' => 'success',
+                        'message' => 'Registration successful'
+                    ];
+                } else {
+                    $response = [
+                        'status' => 'error',
+                        'message' => 'Registration failed'
+                    ];
+                }
+            }
+            break;
+
+        default:
+            http_response_code(404);
+            $response = [
+                'status' => 'error',
+                'message' => 'Route not found'
+            ];
+            break;
+    }
+} catch (PDOException $e) {
+    http_response_code(500);
+    $response = [
+        'status' => 'error',
+        'message' => 'Database error'
+    ];
+}
+
+// Send JSON response
+echo json_encode($response);
