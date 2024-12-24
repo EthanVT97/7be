@@ -3,6 +3,10 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+// Debug logging
+error_log("API Request - Method: " . $_SERVER['REQUEST_METHOD'] . ", URI: " . $_SERVER['REQUEST_URI']);
+error_log("GET params: " . json_encode($_GET));
+
 // Handle CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
@@ -27,6 +31,9 @@ require_once __DIR__ . '/../includes/config.php';
 // Get the action from query parameter
 $action = $_GET['action'] ?? '';
 $subaction = $_GET['subaction'] ?? '';
+
+// Debug logging
+error_log("Action: " . $action . ", Subaction: " . $subaction);
 
 // Initialize response
 $response = ['status' => 'error', 'message' => 'Invalid request'];
@@ -70,6 +77,7 @@ try {
             break;
 
         case 'status':
+            error_log("Handling status route");
             $response = [
                 'status' => 'success',
                 'message' => 'API is working',
@@ -82,6 +90,7 @@ try {
             break;
 
         case '':
+            error_log("Handling root route");
             $response = [
                 'status' => 'success',
                 'message' => 'API is working',
@@ -94,6 +103,7 @@ try {
             break;
 
         default:
+            error_log("Invalid route: " . $action);
             $response = [
                 'status' => 'error',
                 'message' => 'Invalid route',
@@ -121,6 +131,9 @@ try {
         'message' => 'Server error: ' . $e->getMessage()
     ];
 }
+
+// Debug logging
+error_log("Response: " . json_encode($response));
 
 // Send response
 echo json_encode($response);
