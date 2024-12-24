@@ -2,7 +2,7 @@
 FROM composer:2.6 as composer
 
 WORKDIR /app
-COPY composer.json composer.lock ./
+COPY composer.json ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 COPY . .
@@ -39,11 +39,9 @@ RUN sed -i 's/ServerSignature On/ServerSignature Off/' /etc/apache2/conf-availab
 
 # Set up PHP configuration
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-COPY docker/php/custom.ini /usr/local/etc/php/conf.d/
 
 # Set up Apache configuration
-COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
-COPY docker/apache/security.conf /etc/apache2/conf-available/security.conf
+COPY .htaccess /var/www/html/.htaccess
 
 # Copy application files
 WORKDIR /var/www/html
