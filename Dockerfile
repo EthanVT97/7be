@@ -1,56 +1,77 @@
+# Build stage
+FROM composer:2.6 as composer
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+COPY . .
+RUN composer dump-autoload --optimize
+
+# Production stage
 FROM php:8.1-apache
 
-# Install PHP extensions and dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
-    git \
-    curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# PHP Configuration
-RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "display_startup_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "log_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "error_log = /dev/stderr" >> /usr/local/etc/php/conf.d/error-reporting.ini
-
-# Enable Apache modules
-RUN a2enmod rewrite headers
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd
 
 # Configure Apache
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-RUN echo '<Directory /var/www/html/>' >> /etc/apache2/apache2.conf
-RUN echo '    Options Indexes FollowSymLinks' >> /etc/apache2/apache2.conf
-RUN echo '    AllowOverride All' >> /etc/apache2/apache2.conf
-RUN echo '    Require all granted' >> /etc/apache2/apache2.conf
-RUN echo '    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' >> /etc/apache2/apache2.conf
-RUN echo '</Directory>' >> /etc/apache2/apache2.conf
+RUN a2enmod rewrite headers expires
+RUN sed -i 's/ServerTokens OS/ServerTokens Prod/' /etc/apache2/conf-available/security.conf
+RUN sed -i 's/ServerSignature On/ServerSignature Off/' /etc/apache2/conf-available/security.conf
 
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Set up PHP configuration
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+COPY docker/php/custom.ini /usr/local/etc/php/conf.d/
+
+# Set up Apache configuration
+COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/apache/security.conf /etc/apache2/conf-available/security.conf
 
 # Copy application files
-COPY . /var/www/html/
 WORKDIR /var/www/html
+COPY --from=composer /app .
+RUN chown -R www-data:www-data /var/www/html
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod 644 /var/www/html/*.php
-
-# Environment variables with defaults
-ENV DB_HOST=sql12.freesqldatabase.com \
+# Set up environment variables
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    LOG_CHANNEL=stderr \
+    DB_CONNECTION=mysql \
+    DB_HOST=sql12.freesqldatabase.com \
     DB_NAME=sql12753941 \
     DB_USER=sql12753941 \
     DB_PASS=xPMZuuk5AZ
 
+# Security headers
+RUN echo 'Header set X-Content-Type-Options "nosniff"' >> /etc/apache2/conf-available/security.conf
+RUN echo 'Header set X-Frame-Options "SAMEORIGIN"' >> /etc/apache2/conf-available/security.conf
+RUN echo 'Header set X-XSS-Protection "1; mode=block"' >> /etc/apache2/conf-available/security.conf
+RUN echo 'Header set Referrer-Policy "strict-origin-when-cross-origin"' >> /etc/apache2/conf-available/security.conf
+
+# Expose port
 EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD curl -f http://localhost/api/health || exit 1
+
+# Start Apache
 CMD ["apache2-foreground"]

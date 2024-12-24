@@ -7,6 +7,9 @@ services:
     region: singapore
     plan: starter
     healthCheckPath: /api/health
+    numInstances: 1
+    domains:
+      - api.2d3d-lottery.com
     envVars:
       - key: DB_HOST
         value: sql12.freesqldatabase.com
@@ -16,6 +19,23 @@ services:
         value: sql12753941
       - key: DB_PASS
         value: xPMZuuk5AZ
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: ALLOWED_ORIGINS
+        value: https://2d3d-lottery.com,https://www.2d3d-lottery.com
+    disk:
+      name: lottery-data
+      mountPath: /var/www/html/storage
+      sizeGB: 10
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryPercent: 80
+      targetCPUPercent: 80
 
   # Frontend Service
   - type: web
@@ -25,6 +45,10 @@ services:
     region: singapore
     plan: starter
     healthCheckPath: /
+    numInstances: 2
+    domains:
+      - 2d3d-lottery.com
+      - www.2d3d-lottery.com
     envVars:
       - key: NODE_ENV
         value: production
@@ -35,4 +59,46 @@ services:
           property: url
     buildCommand: npm run build
     startCommand: nginx -g 'daemon off;'
+    scaling:
+      minInstances: 2
+      maxInstances: 5
+      targetMemoryPercent: 70
+      targetCPUPercent: 70
     autoDeploy: true
+
+  # Redis Cache Service
+  - type: redis
+    name: lottery-cache
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+# Database Backup
+databases:
+  - name: lottery-db-backup
+    type: mysql
+    region: singapore
+    plan: starter
+    ipAllowList: []
+
+# HTTPS/SSL Configuration
+tlsConfig:
+  minVersion: "1.2"
+  maxVersion: "1.3"
+  preferServerCiphers: true
+  cipherSuites:
+    - TLS_AES_128_GCM_SHA256
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+
+# Headers Configuration
+headers:
+  - path: /*
+    values:
+      X-Frame-Options: DENY
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self';"
