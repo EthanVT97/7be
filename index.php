@@ -1,13 +1,14 @@
 <?php
+// Error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in
-$isLoggedIn = isset($_SESSION['user_id']);
-
-// Set content type to JSON for API responses
+// Set headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -19,109 +20,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Get the requested path
-$request = $_SERVER['REQUEST_URI'];
-$path = parse_url($request, PHP_URL_PATH);
-
-// Remove leading slash and get path segments
-$path = ltrim($path, '/');
-$segments = explode('/', $path);
-
-// Basic routing
-$route = $segments[0] ?? '';
-
-// Initialize response
-$response = ['status' => 'error', 'message' => 'Invalid request'];
-
 try {
-    require_once 'config.php';
+    // Load configuration
+    require_once __DIR__ . '/config.php';
     
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Initialize response
+    $response = ['status' => 'success', 'message' => 'API is working'];
+    
+    // Get request path
+    $request_uri = $_SERVER['REQUEST_URI'];
+    $path = trim(parse_url($request_uri, PHP_URL_PATH), '/');
+    $segments = explode('/', $path);
+    $route = $segments[0] ?? '';
 
+    // Basic route handling
     switch ($route) {
         case '':
         case 'home':
             $response = [
                 'status' => 'success',
                 'data' => [
-                    'title' => 'Welcome to 2D3D Kobo',
-                    'isLoggedIn' => $isLoggedIn
+                    'message' => 'Welcome to 2D3D Kobo API',
+                    'version' => '1.0.0'
                 ]
             ];
             break;
 
-        case 'login':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-                $stmt->execute([$data['username']]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($user && password_verify($data['password'], $user['password'])) {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-                    
-                    $response = [
-                        'status' => 'success',
-                        'message' => 'Login successful',
-                        'user' => [
-                            'id' => $user['id'],
-                            'username' => $user['username']
-                        ]
-                    ];
-                } else {
-                    $response = [
-                        'status' => 'error',
-                        'message' => 'Invalid credentials'
-                    ];
-                }
-            }
-            break;
-
-        case 'logout':
-            session_destroy();
+        case 'test':
             $response = [
                 'status' => 'success',
-                'message' => 'Logged out successfully'
+                'data' => [
+                    'message' => 'API test endpoint',
+                    'time' => date('Y-m-d H:i:s'),
+                    'route' => $route
+                ]
             ];
-            break;
-
-        case 'register':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                
-                // Check if username exists
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
-                $stmt->execute([$data['username']]);
-                if ($stmt->fetchColumn() > 0) {
-                    $response = [
-                        'status' => 'error',
-                        'message' => 'Username already exists'
-                    ];
-                    break;
-                }
-
-                // Create new user
-                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-                
-                if ($stmt->execute([$data['username'], $hashedPassword])) {
-                    $response = [
-                        'status' => 'success',
-                        'message' => 'Registration successful'
-                    ];
-                } else {
-                    $response = [
-                        'status' => 'error',
-                        'message' => 'Registration failed'
-                    ];
-                }
-            }
             break;
 
         default:
@@ -132,13 +65,16 @@ try {
             ];
             break;
     }
-} catch (PDOException $e) {
+
+} catch (Exception $e) {
     http_response_code(500);
     $response = [
         'status' => 'error',
-        'message' => 'Database error'
+        'message' => 'Server Error',
+        'debug' => $e->getMessage()
     ];
 }
 
-// Send JSON response
+// Send response
 echo json_encode($response);
+exit();
