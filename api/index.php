@@ -1,4 +1,8 @@
 <?php
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 // Handle CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
@@ -13,7 +17,11 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../config.php';
+// Define that this is included from index
+define('INCLUDED_FROM_INDEX', true);
+
+// Include configuration
+require_once __DIR__ . '/../includes/config.php';
 
 // Get the action from query parameter
 $route = $_GET['action'] ?? '';
@@ -23,18 +31,22 @@ $subaction = $_GET['subaction'] ?? '';
 $response = ['status' => 'error', 'message' => 'Invalid request'];
 
 try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Reuse existing connection if available
+    if (!isset($conn)) {
+        $conn = new PDO(
+            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+            DB_USER,
+            DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+    }
 
+    // Handle different routes
     switch ($route) {
         case 'login':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data = json_decode(file_get_contents('php://input'), true);
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+                $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
                 $stmt->execute([$data['username']]);
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -63,7 +75,7 @@ try {
                 $data = json_decode(file_get_contents('php://input'), true);
                 $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
                 
-                $stmt = $pdo->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+                $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
                 if ($stmt->execute([$data['username'], $data['email'], $hashedPassword])) {
                     $response = [
                         'status' => 'success',
@@ -75,7 +87,7 @@ try {
 
         case 'results':
             if ($subaction === 'live') {
-                $stmt = $pdo->query("
+                $stmt = $conn->query("
                     SELECT * FROM lottery_results 
                     WHERE status = 'active' 
                     ORDER BY draw_time DESC 
@@ -112,11 +124,64 @@ try {
                 }
             }
             break;
+
+        case 'results':
+            if ($subaction === 'latest') {
+                $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 1");
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($result) {
+                    $response = [
+                        'status' => 'success',
+                        'data' => $result
+                    ];
+                } else {
+                    $response = [
+                        'status' => 'error',
+                        'message' => 'No results found'
+                    ];
+                }
+            } else {
+                $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 10");
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $response = [
+                    'status' => 'success',
+                    'data' => $results
+                ];
+            }
+            break;
+
+        case 'status':
+            $response = [
+                'status' => 'success',
+                'message' => 'API is running',
+                'server_time' => date('Y-m-d H:i:s'),
+                'timezone' => date_default_timezone_get(),
+                'db_connected' => true
+            ];
+            break;
+
+        default:
+            $response = [
+                'status' => 'error',
+                'message' => 'Invalid route',
+                'available_routes' => [
+                    '/api/?action=results',
+                    '/api/?action=results&subaction=latest',
+                    '/api/?action=status'
+                ]
+            ];
     }
 } catch (PDOException $e) {
+    error_log("Database Error: " . $e->getMessage());
     $response = [
         'status' => 'error',
         'message' => 'Database error: ' . $e->getMessage()
+    ];
+} catch (Exception $e) {
+    error_log("Server Error: " . $e->getMessage());
+    $response = [
+        'status' => 'error',
+        'message' => 'Server error: ' . $e->getMessage()
     ];
 }
 
