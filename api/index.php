@@ -9,7 +9,7 @@ error_log("Method: " . $_SERVER['REQUEST_METHOD']);
 error_log("URI: " . $_SERVER['REQUEST_URI']);
 error_log("Query String: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
 error_log("Script: " . $_SERVER['SCRIPT_NAME']);
-error_log("GET params: " . json_encode($_GET));
+error_log("GET params raw: " . print_r($_GET, true));
 
 // Handle CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -32,18 +32,13 @@ define('API_REQUEST', true);
 // Include configuration
 require_once __DIR__ . '/../includes/config.php';
 
-// Parse request
-$parts = parse_url($_SERVER['REQUEST_URI']);
-$path = $parts['path'] ?? '';
-$query = [];
-parse_str($parts['query'] ?? '', $query);
+// Get action and subaction directly from $_GET
+$action = isset($_GET['action']) ? trim($_GET['action']) : '';
+$subaction = isset($_GET['subaction']) ? trim($_GET['subaction']) : '';
 
-// Get action from either query string or path
-$action = $query['action'] ?? '';
-$subaction = $query['subaction'] ?? '';
-
-error_log("Parsed action: " . $action);
-error_log("Parsed subaction: " . $subaction);
+error_log("Action (raw): " . print_r($_GET['action'] ?? 'not set', true));
+error_log("Action (parsed): " . $action);
+error_log("Subaction: " . $subaction);
 
 // Initialize response
 $response = ['status' => 'error', 'message' => 'Invalid request'];
@@ -60,7 +55,15 @@ try {
     }
 
     error_log("Database connected successfully");
-    error_log("Processing route: " . $action);
+
+    // Validate action
+    $valid_actions = ['results', 'status', ''];
+    if (!in_array($action, $valid_actions)) {
+        error_log("Invalid action: " . $action);
+        throw new Exception("Invalid action: " . $action);
+    }
+
+    error_log("Processing valid action: " . $action);
 
     // Handle different routes
     switch ($action) {
@@ -105,8 +108,10 @@ try {
                     'uri' => $_SERVER['REQUEST_URI'],
                     'query' => $_SERVER['QUERY_STRING'] ?? '',
                     'script' => $_SERVER['SCRIPT_NAME'],
-                    'action' => $action,
-                    'subaction' => $subaction
+                    'action_raw' => $_GET['action'] ?? 'not set',
+                    'action_parsed' => $action,
+                    'subaction' => $subaction,
+                    'get_params' => $_GET
                 ]
             ];
             break;
@@ -120,12 +125,15 @@ try {
                 'php_version' => PHP_VERSION,
                 'request_method' => $_SERVER['REQUEST_METHOD'],
                 'request_uri' => $_SERVER['REQUEST_URI'],
-                'db_connected' => true
+                'db_connected' => true,
+                'debug' => [
+                    'get_params' => $_GET
+                ]
             ];
             break;
 
         default:
-            error_log("Invalid route: " . $action);
+            error_log("Invalid route (default case): " . $action);
             $response = [
                 'status' => 'error',
                 'message' => 'Invalid route',
@@ -137,7 +145,8 @@ try {
                 'debug' => [
                     'requested_action' => $action,
                     'uri' => $_SERVER['REQUEST_URI'],
-                    'query' => $_SERVER['QUERY_STRING'] ?? ''
+                    'query' => $_SERVER['QUERY_STRING'] ?? '',
+                    'get_params' => $_GET
                 ]
             ];
     }
@@ -148,14 +157,20 @@ try {
         'message' => 'Database error: ' . $e->getMessage(),
         'debug' => [
             'host' => DB_HOST,
-            'database' => DB_NAME
+            'database' => DB_NAME,
+            'get_params' => $_GET
         ]
     ];
 } catch (Exception $e) {
     error_log("Server Error: " . $e->getMessage());
     $response = [
         'status' => 'error',
-        'message' => 'Server error: ' . $e->getMessage()
+        'message' => $e->getMessage(),
+        'debug' => [
+            'get_params' => $_GET,
+            'uri' => $_SERVER['REQUEST_URI'],
+            'query' => $_SERVER['QUERY_STRING'] ?? ''
+        ]
     ];
 }
 
