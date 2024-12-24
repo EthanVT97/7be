@@ -1,9 +1,15 @@
 <?php
 // Database configuration
-define('DB_HOST', getenv('DB_HOST') ?: 'sql12.freesqldatabase.com');
-define('DB_USER', getenv('DB_USER') ?: 'sql12753941');
-define('DB_PASS', getenv('DB_PASS') ?: 'xPMZuuk5AZ');
-define('DB_NAME', getenv('DB_NAME') ?: 'sql12753941');
+$db_host = getenv('DB_HOST');
+$db_name = getenv('DB_NAME');
+$db_user = getenv('DB_USER');
+$db_pass = getenv('DB_PASS');
+
+// Use environment variables or fallback to defaults
+define('DB_HOST', $db_host ?: 'sql12.freesqldatabase.com');
+define('DB_NAME', $db_name ?: 'sql12753941');
+define('DB_USER', $db_user ?: 'sql12753941');
+define('DB_PASS', $db_pass ?: 'xPMZuuk5AZ');
 
 // Establish database connection
 try {

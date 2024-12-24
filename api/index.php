@@ -17,8 +17,9 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Define that this is included from index
+// Define constants
 define('INCLUDED_FROM_INDEX', true);
+define('API_REQUEST', true);
 
 // Include configuration
 require_once __DIR__ . '/../includes/config.php';
@@ -31,7 +32,7 @@ $subaction = $_GET['subaction'] ?? '';
 $response = ['status' => 'error', 'message' => 'Invalid request'];
 
 try {
-    // Reuse existing connection if available
+    // Test database connection
     if (!isset($conn)) {
         $conn = new PDO(
             "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
@@ -43,88 +44,6 @@ try {
 
     // Handle different routes
     switch ($route) {
-        case 'login':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-                $stmt->execute([$data['username']]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($user && password_verify($data['password'], $user['password'])) {
-                    $response = [
-                        'status' => 'success',
-                        'message' => 'Login successful',
-                        'token' => 'dummy_token_' . time(),
-                        'user' => [
-                            'id' => $user['id'],
-                            'username' => $user['username'],
-                            'role' => $user['role']
-                        ]
-                    ];
-                } else {
-                    $response = [
-                        'status' => 'error',
-                        'message' => 'Invalid credentials'
-                    ];
-                }
-            }
-            break;
-
-        case 'register':
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = json_decode(file_get_contents('php://input'), true);
-                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-                
-                $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-                if ($stmt->execute([$data['username'], $data['email'], $hashedPassword])) {
-                    $response = [
-                        'status' => 'success',
-                        'message' => 'Registration successful'
-                    ];
-                }
-            }
-            break;
-
-        case 'results':
-            if ($subaction === 'live') {
-                $stmt = $conn->query("
-                    SELECT * FROM lottery_results 
-                    WHERE status = 'active' 
-                    ORDER BY draw_time DESC 
-                    LIMIT 4
-                ");
-                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                $response = [
-                    'status' => 'success',
-                    'data' => $results
-                ];
-            }
-            break;
-
-        case 'pages':
-            if ($subaction) {
-                $content = [
-                    'home' => ['title' => 'Welcome to 2D3D Kobo', 'content' => '<h2>Welcome to 2D3D Kobo</h2><p>Check out our latest lottery results!</p>'],
-                    '2d' => ['title' => '2D Lottery', 'content' => '<h2>2D Lottery</h2><p>Place your bets for the next 2D draw.</p>'],
-                    '3d' => ['title' => '3D Lottery', 'content' => '<h2>3D Lottery</h2><p>Place your bets for the next 3D draw.</p>'],
-                    'thai' => ['title' => 'Thai Lottery', 'content' => '<h2>Thai Lottery</h2><p>Place your bets for the next Thai lottery draw.</p>'],
-                    'laos' => ['title' => 'Laos Lottery', 'content' => '<h2>Laos Lottery</h2><p>Place your bets for the next Laos lottery draw.</p>']
-                ];
-                
-                if (isset($content[$subaction])) {
-                    $response = [
-                        'status' => 'success',
-                        'data' => $content[$subaction]
-                    ];
-                } else {
-                    $response = [
-                        'status' => 'error',
-                        'message' => 'Page not found'
-                    ];
-                }
-            }
-            break;
-
         case 'results':
             if ($subaction === 'latest') {
                 $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 1");
@@ -156,7 +75,8 @@ try {
                 'message' => 'API is running',
                 'server_time' => date('Y-m-d H:i:s'),
                 'timezone' => date_default_timezone_get(),
-                'db_connected' => true
+                'db_connected' => true,
+                'db_host' => DB_HOST
             ];
             break;
 
@@ -175,7 +95,11 @@ try {
     error_log("Database Error: " . $e->getMessage());
     $response = [
         'status' => 'error',
-        'message' => 'Database error: ' . $e->getMessage()
+        'message' => 'Database error: ' . $e->getMessage(),
+        'debug' => [
+            'host' => DB_HOST,
+            'database' => DB_NAME
+        ]
     ];
 } catch (Exception $e) {
     error_log("Server Error: " . $e->getMessage());
@@ -186,5 +110,4 @@ try {
 }
 
 // Send response
-http_response_code(200);
 echo json_encode($response);
