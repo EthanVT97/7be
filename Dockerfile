@@ -3,7 +3,17 @@ FROM php:8.1-apache
 # Install PHP extensions and dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # PHP Configuration
 RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
@@ -15,27 +25,17 @@ RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini 
 # Enable Apache modules
 RUN a2enmod rewrite headers
 
-# Configure VirtualHost
-RUN echo '\
-<VirtualHost *:80>\n\
-    ServerAdmin webmaster@localhost\n\
-    DocumentRoot /var/www/html\n\
-    DirectoryIndex index.php\n\
-\n\
-    <Directory /var/www/html>\n\
-        Options Indexes FollowSymLinks\n\
-        AllowOverride All\n\
-        Require all granted\n\
-\n\
-        RewriteEngine On\n\
-        RewriteCond %{REQUEST_FILENAME} !-f\n\
-        RewriteCond %{REQUEST_FILENAME} !-d\n\
-        RewriteRule ^(.*)$ index.php [QSA,L]\n\
-    </Directory>\n\
-\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+# Configure Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN echo '<Directory /var/www/html/>' >> /etc/apache2/apache2.conf
+RUN echo '    Options Indexes FollowSymLinks' >> /etc/apache2/apache2.conf
+RUN echo '    AllowOverride All' >> /etc/apache2/apache2.conf
+RUN echo '    Require all granted' >> /etc/apache2/apache2.conf
+RUN echo '    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' >> /etc/apache2/apache2.conf
+RUN echo '</Directory>' >> /etc/apache2/apache2.conf
+
+# Get latest Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy application files
 COPY . /var/www/html/
