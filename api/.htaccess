@@ -10,7 +10,10 @@ Header set Access-Control-Allow-Origin "*"
 Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
 Header set Access-Control-Allow-Headers "Content-Type, Authorization"
 
-# Handle Front Controller
-RewriteCond %{REQUEST_FILENAME} !-d
+# Only rewrite if file doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [L]
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Handle query parameters
+RewriteCond %{QUERY_STRING} ^(.*)$
+RewriteRule ^(.*)$ index.php [QSA,L]

@@ -26,7 +26,13 @@ try {
         'timezone' => date_default_timezone_get(),
         'db_host' => DB_HOST,
         'db_name' => DB_NAME,
-        'php_version' => PHP_VERSION
+        'php_version' => PHP_VERSION,
+        'debug' => [
+            'request_method' => $_SERVER['REQUEST_METHOD'],
+            'request_uri' => $_SERVER['REQUEST_URI'],
+            'query_string' => $_SERVER['QUERY_STRING'] ?? '',
+            'script_name' => $_SERVER['SCRIPT_NAME']
+        ]
     ];
 } catch (PDOException $e) {
     $response = [
@@ -34,10 +40,18 @@ try {
         'message' => 'Database error: ' . $e->getMessage(),
         'debug' => [
             'host' => DB_HOST,
-            'database' => DB_NAME
+            'database' => DB_NAME,
+            'request_method' => $_SERVER['REQUEST_METHOD'],
+            'request_uri' => $_SERVER['REQUEST_URI'],
+            'query_string' => $_SERVER['QUERY_STRING'] ?? '',
+            'script_name' => $_SERVER['SCRIPT_NAME']
         ]
     ];
 }
+
+// Debug logging
+error_log("Test Endpoint - Method: " . $_SERVER['REQUEST_METHOD'] . ", URI: " . $_SERVER['REQUEST_URI']);
+error_log("Test Response: " . json_encode($response));
 
 // Send response
 header('Content-Type: application/json');
