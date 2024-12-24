@@ -1,15 +1,16 @@
 services:
   # Backend API Service
   - type: web
-    name: lottery-api
+    name: 2d3d-lottery-api
     env: docker
     dockerfilePath: ./Dockerfile
-    region: singapore
-    plan: starter
+    region: oregon
+    plan: free
+    buildCommand: ""
+    startCommand: ""
     healthCheckPath: /api/health
+    autoDeploy: false
     numInstances: 1
-    domains:
-      - api.2d3d-lottery.com
     envVars:
       - key: DB_HOST
         value: sql12.freesqldatabase.com
@@ -36,6 +37,8 @@ services:
       maxInstances: 3
       targetMemoryPercent: 80
       targetCPUPercent: 80
+    domains:
+      - twod3d-lottery-api.onrender.com
 
   # Frontend Service
   - type: web

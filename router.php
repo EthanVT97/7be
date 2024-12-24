@@ -40,6 +40,12 @@ if (strpos($uri, '/api') === 0) {
         // Set API_REQUEST flag
         define('API_REQUEST', true);
         
+        // Health check endpoint - no auth required
+        if ($_SERVER['REQUEST_URI'] === '/api/health') {
+            require_once __DIR__ . '/api/health.php';
+            exit;
+        }
+        
         // Include the API handler
         require __DIR__ . '/api/index.php';
     } catch (Exception $e) {
