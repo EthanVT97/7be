@@ -25,7 +25,7 @@ define('API_REQUEST', true);
 require_once __DIR__ . '/../includes/config.php';
 
 // Get the action from query parameter
-$route = $_GET['action'] ?? '';
+$action = $_GET['action'] ?? '';
 $subaction = $_GET['subaction'] ?? '';
 
 // Initialize response
@@ -43,7 +43,7 @@ try {
     }
 
     // Handle different routes
-    switch ($route) {
+    switch ($action) {
         case 'results':
             if ($subaction === 'latest') {
                 $stmt = $conn->query("SELECT * FROM lottery_results ORDER BY draw_date DESC, draw_time DESC LIMIT 1");
@@ -81,28 +81,28 @@ try {
             ];
             break;
 
+        case '':
+            $response = [
+                'status' => 'success',
+                'message' => 'API is working',
+                'server_time' => date('Y-m-d H:i:s'),
+                'php_version' => PHP_VERSION,
+                'request_method' => $_SERVER['REQUEST_METHOD'],
+                'request_uri' => $_SERVER['REQUEST_URI'],
+                'db_connected' => true
+            ];
+            break;
+
         default:
-            if (empty($route)) {
-                $response = [
-                    'status' => 'success',
-                    'message' => 'API is working',
-                    'server_time' => date('Y-m-d H:i:s'),
-                    'php_version' => PHP_VERSION,
-                    'request_method' => $_SERVER['REQUEST_METHOD'],
-                    'request_uri' => $_SERVER['REQUEST_URI'],
-                    'db_connected' => true
-                ];
-            } else {
-                $response = [
-                    'status' => 'error',
-                    'message' => 'Invalid route',
-                    'available_routes' => [
-                        '/api/?action=results',
-                        '/api/?action=results&subaction=latest',
-                        '/api/?action=status'
-                    ]
-                ];
-            }
+            $response = [
+                'status' => 'error',
+                'message' => 'Invalid route',
+                'available_routes' => [
+                    '/api/?action=results',
+                    '/api/?action=results&subaction=latest',
+                    '/api/?action=status'
+                ]
+            ];
     }
 } catch (PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
