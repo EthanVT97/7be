@@ -21,7 +21,7 @@ try {
         status ENUM('active', 'inactive', 'banned') DEFAULT 'active',
         last_login DATETIME,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at DATETIME
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     echo "Users table created successfully<br>";
 
@@ -34,7 +34,7 @@ try {
         result_number VARCHAR(20) NOT NULL,
         status ENUM('pending', 'active', 'completed') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at DATETIME
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     echo "Lottery results table created successfully<br>";
 
@@ -50,10 +50,25 @@ try {
         status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
         remark TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        updated_at DATETIME,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     echo "Payments table created successfully<br>";
+
+    // Create test user
+    $username = 'test';
+    $password = password_hash('test123', PASSWORD_DEFAULT);
+    $email = 'test@example.com';
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, 'admin')");
+        $stmt->execute([$username, $password, $email]);
+        echo "Test user created successfully<br>";
+    } catch (PDOException $e) {
+        if ($e->getCode() != 23000) { // Skip if user already exists
+            throw $e;
+        }
+    }
 
     // Create notifications table
     $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
@@ -63,7 +78,7 @@ try {
         message TEXT NOT NULL,
         type ENUM('info', 'success', 'warning', 'error') DEFAULT 'info',
         is_read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     echo "Notifications table created successfully<br>";

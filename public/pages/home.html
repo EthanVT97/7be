@@ -1,0 +1,41 @@
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Welcome to 7K Online နှစ်လုံး သုံးလုံး</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Get the latest lottery results and updates in real-time!</p>
+                <p>Stay up to date with all the latest draws and never miss a winning number. Our platform provides:</p>
+                <ul>
+                    <li>Real-time results for all lottery types</li>
+                    <li>Historical data and trends</li>
+                    <li>Personalized notifications</li>
+                    <li>Secure account management</li>
+                </ul>
+                <div class="auth-required" style="display: none;">
+                    <a href="#" onclick="loadPage('history')" class="btn btn-primary">View History</a>
+                </div>
+                <div class="guest-only">
+                    <p>Create an account to access more features!</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('registerBtn').click()">Register Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Next Draw</h3>
+            </div>
+            <div class="card-body">
+                <div id="countdown">
+                    <p class="text-center mb-2">Next draw in:</p>
+                    <div class="display-4 text-center text-primary">
+                        <span id="timer">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

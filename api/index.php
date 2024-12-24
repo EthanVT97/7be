@@ -65,7 +65,7 @@ if (!$rateLimiter->checkLimit($clientIp)) {
 
 // Parse the request URI
 $requestUri = $_SERVER['REQUEST_URI'];
-$basePath = '/2D3DKobo/api';
+$basePath = '/api';
 $path = str_replace($basePath, '', parse_url($requestUri, PHP_URL_PATH));
 $pathParts = array_filter(explode('/', $path));
 $method = $_SERVER['REQUEST_METHOD'];
@@ -80,6 +80,44 @@ if (empty($pathParts)) {
         'db_connected' => isset($conn),
         'rate_limit_remaining' => $rateLimiter->getRemainingLimit($clientIp)
     ], 'success', 'API is working');
+}
+
+// Handle authentication endpoints
+if ($pathParts[1] === 'auth') {
+    switch ($pathParts[2] ?? '') {
+        case 'login':
+            if ($method !== 'POST') {
+                sendError('Method not allowed', 405);
+            }
+            
+            $data = json_decode(file_get_contents('php://input'), true);
+            $username = $data['username'] ?? '';
+            $password = $data['password'] ?? '';
+            
+            if (empty($username) || empty($password)) {
+                sendError('Username and password are required');
+            }
+            
+            try {
+                $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE username = ?");
+                $stmt->execute([$username]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$user || !password_verify($password, $user['password'])) {
+                    sendError('Invalid username or password', 401);
+                }
+                
+                $token = $auth->generateToken($user['id'], $user['role']);
+                sendResponse(['token' => $token], 'success', 'Login successful');
+            } catch (PDOException $e) {
+                error_log("Login Error: " . $e->getMessage());
+                sendError('Login failed', 500);
+            }
+            break;
+            
+        default:
+            sendError('Invalid auth endpoint', 404);
+    }
 }
 
 try {

@@ -1,153 +1,184 @@
 // Main application logic
 document.addEventListener('DOMContentLoaded', function() {
-    // Your app initialization code will go here
-    console.log('App initialized');
+    initializeApp();
 });
+
+// Global variables
+const API_BASE_URL = 'http://localhost:8000/api';
+let authToken = localStorage.getItem('authToken');
+let refreshInterval;
 
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
+const logoutBtn = document.getElementById('logoutBtn');
 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
 const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const liveResults = document.getElementById('liveResults');
 const mainContent = document.getElementById('mainContent');
-
-// API Base URL
-const API_BASE_URL = 'http://18kchat.42web.io/api/index.php';
+const loadingSpinner = document.createElement('div');
+loadingSpinner.className = 'loading';
 
 // Helper function to call API
-async function callApi(action, subaction = '', method = 'GET', data = null) {
-    let url = `${API_BASE_URL}?action=${action}`;
-    if (subaction) {
-        url += `&subaction=${subaction}`;
-    }
-
-    const options = {
-        method,
-        headers: {
-            'Content-Type': 'application/json'
-        }
+async function callApi(endpoint, method = 'GET', data = null) {
+    const headers = {
+        'Content-Type': 'application/json'
     };
-
-    if (data) {
-        options.body = JSON.stringify(data);
+    
+    if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    const response = await fetch(url, options);
-    return response.json();
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method,
+            headers,
+            body: data ? JSON.stringify(data) : null
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                authToken = null;
+                localStorage.removeItem('authToken');
+                updateAuthUI(false);
+                throw new Error('Authentication failed');
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('API call failed:', error);
+        showAlert(error.message, 'danger');
+        throw error;
+    }
 }
 
 // Event Listeners
-loginBtn.addEventListener('click', () => loginModal.show());
-registerBtn.addEventListener('click', () => registerModal.show());
+if (loginBtn) loginBtn.addEventListener('click', () => loginModal.show());
+if (registerBtn) registerBtn.addEventListener('click', () => registerModal.show());
+if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(loginForm);
-    try {
-        const response = await callApi('login', '', 'POST', {
-            username: formData.get('username'),
-            password: formData.get('password')
-        });
-        
-        if (response.status === 'success') {
-            localStorage.setItem('token', response.token);
-            loginModal.hide();
-            updateAuthUI(true);
-            showAlert('Login successful!', 'success');
-        } else {
-            throw new Error(response.message || 'Login failed');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(loginForm);
+        try {
+            const response = await callApi('/auth/login', 'POST', {
+                username: formData.get('username'),
+                password: formData.get('password')
+            });
+            
+            if (response.token) {
+                authToken = response.token;
+                localStorage.setItem('authToken', authToken);
+                loginModal.hide();
+                updateAuthUI(true);
+                showAlert('Login successful!', 'success');
+                loadLiveResults();
+            }
+        } catch (error) {
+            showAlert('Login failed: ' + error.message, 'danger');
         }
-    } catch (error) {
-        showAlert(error.message || 'Login failed. Please try again.', 'danger');
-    }
-});
+    });
+}
 
-registerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(registerForm);
-    
-    if (formData.get('password') !== formData.get('confirmPassword')) {
-        showAlert('Passwords do not match!', 'danger');
-        return;
-    }
-    
-    try {
-        const response = await callApi('register', '', 'POST', {
-            username: formData.get('username'),
-            email: formData.get('email'),
-            password: formData.get('password')
-        });
+if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(registerForm);
+        const password = formData.get('password');
+        const confirmPassword = formData.get('confirmPassword');
         
-        if (response.status === 'success') {
+        if (password !== confirmPassword) {
+            showAlert('Passwords do not match!', 'danger');
+            return;
+        }
+        
+        try {
+            const response = await callApi('/auth/register', 'POST', {
+                username: formData.get('username'),
+                password: password,
+                email: formData.get('email')
+            });
+            
             registerModal.hide();
             showAlert('Registration successful! Please login.', 'success');
-        } else {
-            throw new Error(response.message || 'Registration failed');
+        } catch (error) {
+            showAlert('Registration failed: ' + error.message, 'danger');
         }
-    } catch (error) {
-        showAlert(error.message || 'Registration failed. Please try again.', 'danger');
-    }
-});
-
-// Navigation
-document.querySelectorAll('[data-page]').forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        loadPage(e.target.dataset.page);
     });
-});
+}
 
 // Functions
 async function loadLiveResults() {
     try {
-        const response = await callApi('results', 'live');
-        if (response.status === 'success') {
-            const resultsHTML = response.data.map(result => `
-                <div class="col-md-3 col-sm-6">
-                    <div class="result-box fade-in">
-                        <h3>${result.lottery_type}</h3>
-                        <div class="result-number">${result.result_number}</div>
-                        <div class="result-time">${formatDateTime(result.draw_time)}</div>
-                    </div>
+        liveResults.appendChild(loadingSpinner);
+        const results = await callApi('/lottery/results');
+        
+        const resultsHtml = results.map(result => `
+            <div class="col-md-4">
+                <div class="result-box">
+                    <h3>${result.type} Draw</h3>
+                    <div class="result-number">${result.number}</div>
+                    <div class="result-time">${formatDateTime(result.draw_time)}</div>
                 </div>
-            `).join('');
-            
-            liveResults.innerHTML = resultsHTML;
-        }
+            </div>
+        `).join('');
+        
+        liveResults.innerHTML = `
+            <div class="row">
+                ${resultsHtml}
+            </div>
+        `;
     } catch (error) {
-        console.error('Error loading live results:', error);
+        liveResults.innerHTML = '<div class="alert alert-danger">Failed to load results</div>';
+    } finally {
+        if (liveResults.contains(loadingSpinner)) {
+            liveResults.removeChild(loadingSpinner);
+        }
     }
 }
 
-async function loadPage(page) {
-    try {
-        const response = await callApi('pages', page);
-        if (response.status === 'success') {
-            mainContent.innerHTML = response.data.content;
-        } else {
-            mainContent.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
-        }
-    } catch (error) {
-        console.error('Error loading page:', error);
-        mainContent.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
-    }
+function loadPage(page) {
+    mainContent.appendChild(loadingSpinner);
+    fetch(`pages/${page}.html`)
+        .then(response => response.text())
+        .then(html => {
+            mainContent.innerHTML = html;
+            if (page === 'home') {
+                loadLiveResults();
+            }
+        })
+        .catch(error => {
+            mainContent.innerHTML = '<div class="alert alert-danger">Failed to load page</div>';
+        })
+        .finally(() => {
+            if (mainContent.contains(loadingSpinner)) {
+                mainContent.removeChild(loadingSpinner);
+            }
+        });
 }
 
 function updateAuthUI(isLoggedIn) {
-    const authButtons = document.getElementById('authButtons');
+    const authElements = document.querySelectorAll('.auth-required');
+    const guestElements = document.querySelectorAll('.guest-only');
+    
+    authElements.forEach(element => {
+        element.style.display = isLoggedIn ? '' : 'none';
+    });
+    
+    guestElements.forEach(element => {
+        element.style.display = isLoggedIn ? 'none' : '';
+    });
+    
     if (isLoggedIn) {
-        authButtons.innerHTML = `
-            <span class="text-light me-3">Welcome back!</span>
-            <button class="btn btn-light" onclick="logout()">Logout</button>
-        `;
+        startAutoRefresh();
     } else {
-        authButtons.innerHTML = `
-            <button class="btn btn-light me-2" id="loginBtn">Login</button>
-            <button class="btn btn-outline-light" id="registerBtn">Register</button>
-        `;
+        stopAutoRefresh();
     }
 }
 
@@ -158,32 +189,54 @@ function showAlert(message, type = 'info') {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
     
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
+    const alertContainer = document.getElementById('alertContainer');
+    if (alertContainer) {
+        alertContainer.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
 }
 
 function formatDateTime(dateTime) {
-    return new Date(dateTime).toLocaleString('en-US', {
+    const options = {
+        year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
-    });
+    };
+    return new Date(dateTime).toLocaleDateString('en-US', options);
+}
+
+function startAutoRefresh() {
+    loadLiveResults();
+    refreshInterval = setInterval(loadLiveResults, 60000); // Refresh every minute
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
 }
 
 function logout() {
-    localStorage.removeItem('token');
+    authToken = null;
+    localStorage.removeItem('authToken');
     updateAuthUI(false);
     showAlert('Logged out successfully', 'info');
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadLiveResults();
-    setInterval(loadLiveResults, 60000); // Refresh every minute
+// Initialize the application
+function initializeApp() {
+    // Check if user is logged in
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        authToken = token;
+        updateAuthUI(true);
+    } else {
+        updateAuthUI(false);
+    }
+    
+    // Load initial page
     loadPage('home');
-    updateAuthUI(!!localStorage.getItem('token'));
-});
+}
