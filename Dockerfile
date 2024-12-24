@@ -1,7 +1,14 @@
 FROM php:8.1-apache
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql
+# Install PHP extensions and dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql
+
+# PHP Configuration
+RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
+    && echo "display_startup_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
+    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/error-reporting.ini
 
 # Enable Apache modules
 RUN a2enmod rewrite headers
@@ -18,24 +25,10 @@ RUN echo '\
         AllowOverride None\n\
         Require all granted\n\
 \n\
-        # URL Rewriting\n\
         RewriteEngine On\n\
         RewriteCond %{REQUEST_FILENAME} !-f\n\
         RewriteCond %{REQUEST_FILENAME} !-d\n\
-        RewriteRule ^api/(.*)$ /api/index.php [QSA,L]\n\
-        RewriteRule ^(.*)$ /index.php [QSA,L]\n\
-\n\
-        # CORS Headers\n\
-        SetEnvIf Origin "^(.*)$" ORIGIN=$1\n\
-        Header set Access-Control-Allow-Origin "%{ORIGIN}e" env=ORIGIN\n\
-        Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"\n\
-        Header set Access-Control-Allow-Headers "Content-Type, Authorization"\n\
-        Header set Access-Control-Allow-Credentials "true"\n\
-\n\
-        # Security Headers\n\
-        Header set X-Frame-Options "DENY"\n\
-        Header set X-Content-Type-Options "nosniff"\n\
-        Header set X-XSS-Protection "1; mode=block"\n\
+        RewriteRule ^(.*)$ index.php [QSA,L]\n\
     </Directory>\n\
 \n\
     ErrorLog ${APACHE_LOG_DIR}/error.log\n\
@@ -48,10 +41,8 @@ WORKDIR /var/www/html
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
-
-# Restart Apache to apply changes
-RUN service apache2 restart
+    && chmod -R 755 /var/www/html \
+    && chmod 644 /var/www/html/*.php
 
 EXPOSE 80
 CMD ["apache2-foreground"]
