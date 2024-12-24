@@ -47,10 +47,10 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod 644 /var/www/html/*.php
 
 # Environment variables with defaults
-ENV DB_HOST=sql207.infinityfree.com \
-    DB_NAME=if0_37960691_if0_37960691_lottery \
-    DB_USER=if0_37960691 \
-    DB_PASS=j7Mw1ZKMjPD
+ENV DB_HOST=sql12.freesqldatabase.com \
+    DB_NAME=sql12753941 \
+    DB_USER=sql12753941 \
+    DB_PASS=xPMZuuk5AZ
 
 EXPOSE 80
 CMD ["apache2-foreground"]
