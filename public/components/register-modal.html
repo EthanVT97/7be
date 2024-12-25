@@ -1,0 +1,73 @@
+<div class="modal fade" id="registerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    အကောင့်အသစ်ဖွင့်ရန်
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-user me-2"></i>
+                            အသုံးပြုသူအမည်
+                        </label>
+                        <input type="text" class="form-control" id="registerUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-envelope me-2"></i>
+                            အီးမေးလ်
+                        </label>
+                        <input type="email" class="form-control" id="registerEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-phone me-2"></i>
+                            ဖုန်းနံပါတ်
+                        </label>
+                        <input type="tel" class="form-control" id="registerPhone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-lock me-2"></i>
+                            စကားဝှက်
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="registerPassword" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('registerPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-lock me-2"></i>
+                            စကားဝှက်အတည်ပြုရန်
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>
+                            အကောင့်ဖွင့်ရန်
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <p class="mb-0">အကောင့်ရှိပြီးသားလား? 
+                    <a href="#" onclick="showLoginModal()" class="text-primary">ဝင်ရန်</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div> 
