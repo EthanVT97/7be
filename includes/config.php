@@ -1,29 +1,40 @@
 <?php
-// Database configuration
-$db_host = getenv('DB_HOST');
-$db_name = getenv('DB_NAME');
-$db_user = getenv('DB_USER');
-$db_pass = getenv('DB_PASS');
+require_once 'cors.php';
 
-// Use environment variables or fallback to defaults
-define('DB_HOST', $db_host ?: 'sql12.freesqldatabase.com');
-define('DB_NAME', $db_name ?: 'sql12753941');
-define('DB_USER', $db_user ?: 'sql12753941');
-define('DB_PASS', $db_pass ?: 'xPMZuuk5AZ');
+// Load environment variables
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
+            list($key, $value) = explode('=', $line, 2);
+            $_ENV[trim($key)] = trim($value);
+            putenv(trim($key) . '=' . trim($value));
+        }
+    }
+}
 
-// Establish database connection
+// Secure JWT configuration
+define('JWT_SECRET', getenv('JWT_SECRET') ?: throw new Exception('JWT_SECRET not set'));
+define('JWT_EXPIRY', 60 * 60 * 24); // 24 hours
+define('JWT_ALGORITHM', 'HS256');
+
+// Database connection
 try {
     $conn = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        "mysql:host=" . getenv('DB_HOST') . ";dbname=" . getenv('DB_NAME'),
+        getenv('DB_USER'),
+        getenv('DB_PASS'),
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+        ]
     );
-} catch(PDOException $e) {
-    error_log("Database Connection Error: " . $e->getMessage());
-    if (!defined('API_REQUEST')) {
-        echo "Connection failed: " . $e->getMessage();
-    }
+} catch (PDOException $e) {
+    error_log('Connection failed: ' . $e->getMessage());
+    http_response_code(500);
+    die('Database connection failed');
 }
 
 // Time zone setting
@@ -47,4 +58,3 @@ define('LOTTERY_2D', '2D');
 define('LOTTERY_3D', '3D');
 define('LOTTERY_THAI', 'THAI');
 define('LOTTERY_LAOS', 'LAOS');
-?>

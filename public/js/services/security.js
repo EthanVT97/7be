@@ -1,122 +1,120 @@
 import config from '../config.js';
+import { api } from './api.js';
+import ErrorHandler from './errorHandler.js';
 
 class SecurityService {
     constructor() {
-        this.loginAttempts = new Map();
-        this.tokenRefreshTimeout = null;
-        this.setupTokenRefresh();
+        this.setupEventListeners();
     }
 
-    validatePassword(password) {
-        if (password.length < config.SECURITY.PASSWORD_MIN_LENGTH) {
-            return { valid: false, message: 'Password too short' };
-        }
+    setupEventListeners() {
+        // Login form submission
+        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.handleLogin();
+        });
 
-        if (config.SECURITY.REQUIRE_SPECIAL_CHARS && 
-            !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-            return { valid: false, message: 'Password must contain special characters' };
-        }
-
-        return { valid: true };
+        // Register form submission
+        document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.handleRegister();
+        });
     }
 
-    checkLoginAttempts(username) {
-        const attempts = this.loginAttempts.get(username) || {
-            count: 0,
-            lastAttempt: 0,
-            lockedUntil: 0
-        };
-
-        const now = Date.now();
-
-        // Check if account is locked
-        if (attempts.lockedUntil > now) {
-            const remainingTime = Math.ceil((attempts.lockedUntil - now) / 1000);
-            return { 
-                allowed: false, 
-                message: `Account locked. Try again in ${remainingTime} seconds`
-            };
+    async checkAuthStatus() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            this.updateAuthUI(false);
+            return;
         }
-
-        // Reset attempts if lockout period has passed
-        if (now - attempts.lastAttempt > config.SECURITY.LOCKOUT_DURATION) {
-            attempts.count = 0;
-        }
-
-        return { allowed: true, attempts };
-    }
-
-    recordLoginAttempt(username, success) {
-        const attempts = this.loginAttempts.get(username) || {
-            count: 0,
-            lastAttempt: 0,
-            lockedUntil: 0
-        };
-
-        attempts.lastAttempt = Date.now();
-
-        if (!success) {
-            attempts.count++;
-            
-            if (attempts.count >= config.SECURITY.MAX_LOGIN_ATTEMPTS) {
-                attempts.lockedUntil = Date.now() + config.SECURITY.LOCKOUT_DURATION;
-            }
-        } else {
-            // Reset on successful login
-            attempts.count = 0;
-            attempts.lockedUntil = 0;
-        }
-
-        this.loginAttempts.set(username, attempts);
-    }
-
-    setupTokenRefresh() {
-        const token = localStorage.getItem('authToken');
-        if (!token) return;
-
         try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const expiryTime = payload.exp * 1000; // Convert to milliseconds
-            const refreshTime = expiryTime - config.SECURITY.TOKEN_REFRESH_BEFORE;
-
-            if (Date.now() >= refreshTime) {
-                this.refreshToken();
-            } else {
-                this.tokenRefreshTimeout = setTimeout(
-                    () => this.refreshToken(), 
-                    refreshTime - Date.now()
-                );
-            }
+            // Verify token with backend
+            await api.call('/auth/verify');
+            this.updateAuthUI(true);
         } catch (error) {
-            console.error('Error setting up token refresh:', error);
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
+            this.updateAuthUI(false);
         }
     }
 
-    async refreshToken() {
+    updateAuthUI(isAuthenticated) {
+        document.querySelectorAll('.auth-required').forEach(el => 
+            el.style.display = isAuthenticated ? '' : 'none'
+        );
+        document.querySelectorAll('.guest-only').forEach(el => 
+            el.style.display = isAuthenticated ? 'none' : ''
+        );
+    }
+
+    showLoginModal() {
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    }
+
+    showRegisterModal() {
+        const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+        registerModal.show();
+    }
+
+    async handleLogin() {
         try {
-            const response = await fetch(`${config.API_BASE_URL}${config.ENDPOINTS.AUTH.REFRESH}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                }
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const response = await api.call(config.ENDPOINTS.AUTH.LOGIN, 'POST', {
+                username,
+                password
             });
 
-            if (!response.ok) throw new Error('Token refresh failed');
-
-            const { token } = await response.json();
-            localStorage.setItem('authToken', token);
-            this.setupTokenRefresh();
+            if (response.token) {
+                localStorage.setItem('token', response.token);
+                this.updateAuthUI(true);
+                bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+                ErrorHandler.handle({ message: 'Logged in successfully', type: 'success' });
+            }
         } catch (error) {
-            console.error('Token refresh failed:', error);
-            localStorage.removeItem('authToken');
-            window.location.href = '/login';
+            ErrorHandler.handle(error);
         }
     }
 
-    cleanup() {
-        if (this.tokenRefreshTimeout) {
-            clearTimeout(this.tokenRefreshTimeout);
+    async handleRegister() {
+        try {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                throw new Error('Passwords do not match');
+            }
+
+            const response = await api.call(config.ENDPOINTS.AUTH.REGISTER, 'POST', {
+                username,
+                email,
+                password
+            });
+
+            if (response.success) {
+                bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+                ErrorHandler.handle({ 
+                    message: 'Registration successful! Please login.', 
+                    type: 'success' 
+                });
+                this.showLoginModal();
+            }
+        } catch (error) {
+            ErrorHandler.handle(error);
+        }
+    }
+
+    async logout() {
+        try {
+            await api.call(config.ENDPOINTS.AUTH.LOGOUT, 'POST');
+            localStorage.removeItem('token');
+            this.updateAuthUI(false);
+            ErrorHandler.handle({ message: 'Logged out successfully' });
+        } catch (error) {
+            ErrorHandler.handle(error);
         }
     }
 }
