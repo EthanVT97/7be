@@ -10,15 +10,16 @@ class Connection {
     public static function getInstance() {
         if (self::$instance === null) {
             $dbConfig = [
-                'host' => $_ENV['DB_HOST'] ?? 'sql12.freesqldatabase.com',
-                'name' => $_ENV['DB_NAME'] ?? 'sql12753941',
-                'user' => $_ENV['DB_USER'] ?? 'sql12753941',
-                'pass' => $_ENV['DB_PASS'] ?? 'xPMZuuk5AZ'
+                'host' => $_ENV['DB_HOST'] ?? 'dpg-ctm70o9opnds73fdciig-a.singapore-postgres.render.com',
+                'port' => $_ENV['DB_PORT'] ?? '5432',
+                'name' => $_ENV['DB_NAME'] ?? 'db_2d3d_lottery_db',
+                'user' => $_ENV['DB_USER'] ?? 'db_2d3d_lottery_db_user',
+                'pass' => $_ENV['DB_PASS'] ?? 'ZcV5s0MAJrFxPyYfQFr7lJFADwxFAn6b'
             ];
 
             try {
                 self::$instance = new PDO(
-                    "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4",
+                    "pgsql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['name']};",
                     $dbConfig['user'],
                     $dbConfig['pass'],
                     [
