@@ -38,7 +38,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         const username = document.getElementById('loginUsername').value;
         const password = document.getElementById('loginPassword').value;
         
-        const response = await fetch('/api/auth/login.php', {
+        const response = await fetch(`${config.API_BASE_URL}/auth/login.php`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

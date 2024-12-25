@@ -1,4 +1,7 @@
 <?php
+header('Access-Control-Allow-Origin: https://twod3d-lottery.onrender.com');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../../includes/auth.php';
 

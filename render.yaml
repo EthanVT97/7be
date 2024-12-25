@@ -1,4 +1,5 @@
 services:
+  # Static frontend
   - type: web
     name: 2d3d-lottery
     env: static
@@ -19,3 +20,31 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # API backend
+  - type: web
+    name: 2d3d-lottery-api
+    env: php
+    buildCommand: composer install
+    startCommand: heroku-php-apache2 public/
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: 2d3d-lottery-db
+          property: host
+      - key: DB_NAME
+        fromDatabase:
+          name: 2d3d-lottery-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: 2d3d-lottery-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: 2d3d-lottery-db
+          property: password
+
+databases:
+  - name: 2d3d-lottery-db
+    plan: free

@@ -1,5 +1,5 @@
 const config = {
-    API_BASE_URL: 'https://twod3d-lottery-api.onrender.com/api',
+    API_BASE_URL: 'https://2d3d-lottery-api.onrender.com/api',
     ENDPOINTS: {
         AUTH: {
             LOGIN: '/auth/login.php',
