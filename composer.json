@@ -3,7 +3,7 @@
     "description": "A modern lottery management system",
     "type": "project",
     "require": {
-        "php": "^8.0",
+        "php": "^8.1",
         "ext-json": "*",
         "ext-pdo": "*",
         "vlucas/phpdotenv": "^5.5"
