@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Dependencies
+/vendor
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+/logs/*
+!logs/.gitkeep
+
+# Cache
+/cache/*
+!cache/.gitkeep 

@@ -1,0 +1,284 @@
+/* Root Variables */
+:root {
+    --primary: #FF4C8B;
+    --dark-purple: #2C2A47;
+    --dark-gold: #E77FAF;
+    --light-orange: #FFD8A8;
+    --white: #FFFFFF;
+    --primary-color: #4CAF50;
+    --secondary-color: #2196F3;
+    --error-color: #f44336;
+    --text-color: #333;
+    --bg-color: #f5f5f5;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Padauk', sans-serif;
+    background: linear-gradient(135deg, var(--dark-purple) 0%, var(--dark-gold) 50%, var(--light-orange) 100%);
+    min-height: 100vh;
+    color: var(--white);
+}
+
+/* Navigation Styles */
+.navbar {
+    background-color: rgba(44, 42, 71, 0.9);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.nav-link {
+    color: var(--white) !important;
+}
+
+/* Card Styles */
+.lottery-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    transition: transform 0.3s ease;
+}
+
+.lottery-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary {
+    color: var(--white);
+    border-color: var(--white);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Lottery Numbers */
+.lottery-numbers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.number-box {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    text-align: center;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.4rem;
+    transition: all 0.3s;
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    backdrop-filter: blur(5px);
+}
+
+.number-box:hover {
+    transform: scale(1.05);
+    background: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 20px rgba(255,76,139,0.4);
+}
+
+.number-box.selected {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 25px rgba(255,76,139,0.5);
+}
+
+/* Table Styles */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px;
+    font-weight: 600;
+}
+
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Form Styles */
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--white);
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
+    color: var(--white);
+}
+
+/* Alert Styles */
+.alert {
+    background: rgba(44, 42, 71, 0.9);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    backdrop-filter: blur(5px);
+}
+
+.alert-success {
+    border-left: 4px solid var(--success-color);
+}
+
+.alert-warning {
+    border-left: 4px solid var(--warning-color);
+}
+
+.alert-danger {
+    border-left: 4px solid var(--error-color);
+}
+
+/* Footer Styles */
+footer {
+    background: rgba(44, 42, 71, 0.95);
+    color: var(--text-color);
+    padding: 2rem 0;
+    margin-top: 3rem;
+    backdrop-filter: blur(10px);
+}
+
+footer p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar-collapse {
+        background: var(--primary-color);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .lottery-numbers {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    }
+
+    .number-box {
+        padding: 15px;
+        font-size: 1.2rem;
+    }
+
+    .lottery-card {
+        padding: 15px;
+    }
+
+    .lottery-card h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Modal Styles */
+.modal-content {
+    background: linear-gradient(135deg, var(--dark-purple) 0%, var(--dark-gold) 100%);
+    border: none;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(255,76,139,0.3);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+}
+
+/* Form Styles */
+.form-label {
+    color: var(--text-color);
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+.input-group .btn {
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.input-group .btn:hover {
+    background-color: var(--background-color);
+}
+
+/* Link Styles */
+.modal-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.modal-footer a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Layout */
+.sidebar {
+    /* Add sidebar styles */
+}
+
+.content {
+    /* Add content styles */
+}
+
+/* Forms */
+.form-group {
+    /* Add form styles */
+}
+
+/* Components */
+.loading-spinner {
+    /* Add loading spinner styles */
+}
+
+/* Utilities */
+.error-message {
+    /* Add error message styles */
+}

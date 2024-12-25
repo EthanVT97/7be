@@ -1,0 +1,71 @@
+<div class="modal fade" id="depositModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    ငွေသွင်းရန်
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="depositForm">
+                    <!-- Payment Methods -->
+                    <div class="mb-4">
+                        <label class="form-label">ငွေသွင်းမည့်နည်းလမ်း</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" value="kpay" id="kpay" checked>
+                                <label class="form-check-label" for="kpay">KPay</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" value="wavepay" id="wavepay">
+                                <label class="form-check-label" for="wavepay">WavePay</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" value="cbpay" id="cbpay">
+                                <label class="form-check-label" for="cbpay">CBPay</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Number -->
+                    <div class="mb-4">
+                        <label class="form-label">ငွေသွင်းရမည့်ဖုန်းနံပါတ်</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="paymentNumber" value="09123456789" readonly>
+                            <button class="btn btn-outline-primary" type="button" onclick="copyPaymentNumber()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">* ကော်ပီကူးရန် ခလုတ်ကိုနှိပ်ပါ</small>
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="mb-4">
+                        <label class="form-label" for="depositAmount">ငွေသွင်းမည့်ပမာဏ</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="depositAmount" min="1000" step="1000" required>
+                            <span class="input-group-text">ကျပ်</span>
+                        </div>
+                        <small class="text-muted">* အနည်းဆုံး ၁,၀၀၀ ကျပ်</small>
+                    </div>
+
+                    <!-- Transaction Screenshot -->
+                    <div class="mb-4">
+                        <label class="form-label" for="transactionImage">ငွေသွင်းပြေစာ ဓာတ်ပုံ</label>
+                        <input type="file" class="form-control" id="transactionImage" accept="image/*" required>
+                        <small class="text-muted">* ငွေလွှဲပြီးကြောင်း screenshot ပုံတင်ပါ</small>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            အတည်ပြုရန်
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 

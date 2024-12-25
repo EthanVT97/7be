@@ -1,0 +1,101 @@
+<div class="modal fade" id="3dModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-dice-three me-2"></i>
+                    ၃ လုံးထီထိုးရန်
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="3dForm">
+                    <!-- Betting Type -->
+                    <div class="mb-4">
+                        <label class="form-label">ထိုးနည်းရွေးပါ</label>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="3dType" value="straight" id="3dStraight" checked>
+                                <label class="form-check-label" for="3dStraight">တိုက်ရိုက်</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="3dType" value="permutation" id="3dPermutation">
+                                <label class="form-check-label" for="3dPermutation">ဘရိတ်</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="3dType" value="twin" id="3dTwin">
+                                <label class="form-check-label" for="3dTwin">စုံပူး</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="3dType" value="front2" id="3dFront2">
+                                <label class="form-check-label" for="3dFront2">ရှေ့ ၂ လုံး</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="3dType" value="back2" id="3dBack2">
+                                <label class="form-check-label" for="3dBack2">နောက် ၂ လုံး</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Number Input -->
+                    <div class="mb-4">
+                        <label class="form-label">ထိုးလိုသည့်ဂဏန်းများ</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="3dNumbers" pattern="[0-9,]*" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="clear3DNumbers()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">* ဂဏန်းများကို ကော်မာ (,) ဖြင့်ခြားပါ။ ဥပမာ - 123,456,789</small>
+                    </div>
+
+                    <!-- Quick Number Generator -->
+                    <div class="mb-4">
+                        <button type="button" class="btn btn-outline-primary me-2" onclick="generate3DRandom()">
+                            <i class="fas fa-random me-2"></i>
+                            ကျပန်း
+                        </button>
+                        <button type="button" class="btn btn-outline-primary me-2" onclick="generate3DTwin()">
+                            <i class="fas fa-equals me-2"></i>
+                            စုံပူး
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="generate3DSequential()">
+                            <i class="fas fa-sort-numeric-up me-2"></i>
+                            အစဉ်လိုက်
+                        </button>
+                    </div>
+
+                    <!-- Amount per Number -->
+                    <div class="mb-4">
+                        <label class="form-label">တစ်ဂဏန်းချင်းစီအတွက် ထိုးငွေ</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="3dAmount" min="100" step="100" required>
+                            <span class="input-group-text">ကျပ်</span>
+                        </div>
+                        <small class="text-muted">* အနည်းဆုံး ၁၀၀ ကျပ်</small>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="mb-2">အနှစ်ချုပ်</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>ထိုးဂဏန်းအရေအတွက်:</span>
+                            <span id="3dTotalNumbers">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>စုစုပေါင်းထိုးငွေ:</span>
+                            <span id="3dTotalAmount">0 ကျပ်</span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            ထိုးမည်
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 

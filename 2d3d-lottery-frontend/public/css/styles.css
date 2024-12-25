@@ -1,0 +1,41 @@
+/* Responsive Improvements */
+@media (max-width: 768px) {
+    .sale-form {
+        padding: 1rem;
+    }
+
+    .number-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .quick-amounts {
+        flex-wrap: wrap;
+    }
+}
+
+/* Loading Animation */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Form Validation Styles */
+.invalid-feedback {
+    display: block;
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger-color);
+    background-image: url("data:image/svg+xml,...");
+} 

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D3D Lottery</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <nav class="navbar">
+            <div class="brand">2D3D Lottery</div>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span id="userName"></span>
+                <button id="logoutBtn">ထွက်ရန်</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div id="loginForm" style="display: none;">
+                <!-- Login form will be dynamically loaded -->
+            </div>
+
+            <div id="mainContent" style="display: none;">
+                <!-- Main content will be dynamically loaded based on user role -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ApiService } from './js/services/api.service.js';
+        import { AuthGuard } from './js/guards/auth.guard.js';
+
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (AuthGuard.checkAuth()) {
+                    const user = ApiService.getCurrentUser();
+                    if (user) {
+                        document.getElementById('userName').textContent = user.name;
+                        document.getElementById('userInfo').style.display = 'block';
+                        
+                        // Redirect to appropriate dashboard
+                        window.location.href = `/${user.role}/dashboard.html`;
+                    }
+                } else {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                window.location.href = '/login.html';
+            }
+        });
+
+        // Logout handler
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            ApiService.logout();
+        });
+    </script>
+</body>
+</html>
