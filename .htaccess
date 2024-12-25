@@ -29,18 +29,33 @@ Header always set X-XSS-Protection "1; mode=block"
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
 # Block access to sensitive files
-<FilesMatch "^\.[^/]*$">
+<Files ~ "^\.">
 Require all denied
-</FilesMatch>
+</Files>
 
-<FilesMatch "\.(env|config|htaccess|htpasswd|ini|log|sh|sql|git|svn)$">
+<Files ~ "\.(env|config|htaccess|htpasswd|ini|log|sh|sql|git|svn)$">
 Require all denied
-</FilesMatch>
+</Files>
 
 # Block access to sensitive directories
-<DirectoryMatch "(^|/)(config|includes|database|logs|temp|cache)($|/)">
+<Directory "*/config/*">
 Require all denied
-</DirectoryMatch>
+</Directory>
+<Directory "*/includes/*">
+Require all denied
+</Directory>
+<Directory "*/database/*">
+Require all denied
+</Directory>
+<Directory "*/logs/*">
+Require all denied
+</Directory>
+<Directory "*/temp/*">
+Require all denied
+</Directory>
+<Directory "*/cache/*">
+Require all denied
+</Directory>
 
 # PHP settings
 php_flag display_errors off
