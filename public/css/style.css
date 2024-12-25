@@ -8,7 +8,7 @@
 
 /* Global Styles */
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Padauk', sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
@@ -17,23 +17,26 @@ body {
 }
 
 /* Navigation Styles */
-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    gap: 20px;
+.navbar {
+    background-color: var(--primary-color);
+    padding: 1rem 0;
 }
 
-nav ul li a {
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
+.navbar-brand {
+    color: white !important;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    color: white !important;
+    opacity: 0.9;
     transition: opacity 0.3s;
+    font-size: 1.1rem;
 }
 
-nav ul li a:hover {
-    opacity: 0.8;
+.nav-link:hover {
+    opacity: 1;
 }
 
 /* Layout */
@@ -41,19 +44,6 @@ nav ul li a:hover {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
-}
-
-header {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 1rem 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 /* Card Styles */
@@ -67,47 +57,55 @@ header .container {
 
 .lottery-card h2 {
     color: var(--primary-color);
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
 }
 
 /* Button Styles */
 .btn-primary {
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: var(--secondary-color) !important;
+    border-color: var(--secondary-color) !important;
     padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-weight: 500;
-    font-size: 1rem;
+    font-weight: 700;
+    transition: all 0.3s;
+    font-size: 1.1rem;
 }
 
 .btn-primary:hover {
-    background-color: #c0392b;
+    background-color: #c0392b !important;
+    border-color: #c0392b !important;
+    transform: translateY(-2px);
 }
 
 /* Lottery Numbers */
 .lottery-numbers {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-    gap: 10px;
+    gap: 15px;
     margin: 20px 0;
 }
 
 .number-box {
-    background: #eee;
+    background: #f8f9fa;
     padding: 15px;
     text-align: center;
-    border-radius: 4px;
+    border-radius: 8px;
     font-weight: bold;
-    transition: transform 0.2s;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    font-size: 1.2rem;
 }
 
 .number-box:hover {
     transform: scale(1.05);
     background: var(--secondary-color);
     color: white;
+    cursor: pointer;
+}
+
+.number-box.selected {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
 }
 
 /* Footer Styles */
@@ -116,21 +114,24 @@ footer {
     color: white;
     padding: 2rem 0;
     margin-top: 3rem;
+    font-size: 1rem;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    header .container {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    nav ul {
+    .navbar-collapse {
+        background: var(--primary-color);
+        padding: 1rem;
+        border-radius: 8px;
         margin-top: 1rem;
-        justify-content: center;
     }
 
     .lottery-numbers {
         grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    }
+
+    .number-box {
+        font-size: 1rem;
+        padding: 12px;
     }
 }
