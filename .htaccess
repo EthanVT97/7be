@@ -1,67 +1,32 @@
-# Enable Apache rewrite engine
+# Enable rewrite engine
 RewriteEngine On
 
-# Set the base directory for rewrites
-RewriteBase /
-
-# Allow direct access to health check
+# Allow health check
 RewriteRule ^health\.php$ - [L]
 
-# Handle Authorization header
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule .* - [env=HTTP_AUTHORIZATION:%1]
-
-# Forward all requests to index.php
+# Redirect all requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [QSA,L]
+RewriteRule ^(.*)$ index.php?/$1 [L]
 
-# Set CORS headers
-Header always set Access-Control-Allow-Origin "*"
-Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-Header always set Access-Control-Allow-Headers "Authorization, Content-Type"
-Header always set Access-Control-Max-Age "3600"
+# CORS headers
+Header set Access-Control-Allow-Origin "http://localhost:3000"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
 
-# Set security headers
-Header always set X-Content-Type-Options "nosniff"
-Header always set X-Frame-Options "SAMEORIGIN"
-Header always set X-XSS-Protection "1; mode=block"
-Header always set Referrer-Policy "strict-origin-when-cross-origin"
+# Add security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+Header set X-XSS-Protection "1; mode=block"
 
-# Block access to sensitive files
-<Files ~ "^\.">
-Require all denied
-</Files>
+# Protect config files
+<FilesMatch "\.(htaccess|htpasswd|env|git|svn|DS_Store)$">
+Order Deny,Allow
+Deny from all
+</FilesMatch>
 
-<Files ~ "\.(env|config|htaccess|htpasswd|ini|log|sh|sql|git|svn)$">
-Require all denied
-</Files>
-
-# Block access to sensitive directories
-<Directory "*/config/*">
-Require all denied
-</Directory>
-<Directory "*/includes/*">
-Require all denied
-</Directory>
-<Directory "*/database/*">
-Require all denied
-</Directory>
-<Directory "*/logs/*">
-Require all denied
-</Directory>
-<Directory "*/temp/*">
-Require all denied
-</Directory>
-<Directory "*/cache/*">
-Require all denied
-</Directory>
-
-# PHP settings
-php_flag display_errors off
-php_value max_execution_time 300
-php_value max_input_time 300
-php_value max_input_vars 1000
-php_value memory_limit 256M
-php_value post_max_size 16M
-php_value upload_max_filesize 16M
+# Protect sensitive directories
+<FilesMatch "^(config|includes|database)">
+Order Allow,Deny
+Deny from all
+</FilesMatch>
