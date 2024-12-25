@@ -1,40 +1,46 @@
 # Enable rewrite engine
 RewriteEngine On
 
+# Set base directory
+RewriteBase /
+
 # Allow health check
 RewriteRule ^health\.php$ - [L]
 
-# Redirect all requests to index.php
-RewriteCond % { REQUEST_FILENAME } !-f
-RewriteCond % { REQUEST_FILENAME } !-d
-RewriteRule ^ index.php [QSA, L]
+# Handle Authorization Header
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Redirect all requests to index.php except for existing files
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
 
 # CORS headers
 Header set Access-Control-Allow-Origin "*"
 Header set Access-Control-Allow-Methods "GET,POST,OPTIONS,PUT,DELETE"
-Header set Access-Control-Allow-Headers "Content-Type"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
 
-# Add security headers
+# Security headers
 Header set X-Content-Type-Options "nosniff"
 Header set X-Frame-Options "SAMEORIGIN"
 Header set X-XSS-Protection "1; mode=block"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
 
-# Protect config files
-<FilesMatch "^\.(htaccess|htpasswd|env|git|svn|DS_Store)$">
-    Order Deny,Allow
+# Protect sensitive files
+<FilesMatch "^(\.htaccess|\.htpasswd|\.env|\.git|\.svn|\.DS_Store)$">
+    Order deny,allow
     Deny from all
 </FilesMatch>
 
 # Protect sensitive directories
-<FilesMatch "^(config|includes|database)">
-Order allow, deny
-Deny from all
+<FilesMatch "^(config|includes|database)/">
+    Order deny,allow
+    Deny from all
 </FilesMatch>
 
-# API security headers
-<IfModule mod_headers.c>
-Header set X-Content-Type-Options "nosniff"
-Header set X-Frame-Options "SAMEORIGIN"
-Header set X-XSS-Protection "1; mode=block"
-Header set Referrer-Policy "same-origin"
-</IfModule>
+# PHP settings
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 300
+php_value max_input_time 300
