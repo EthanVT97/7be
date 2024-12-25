@@ -18,9 +18,9 @@ function initializeLottery() {
             const randomNum = Math.floor(Math.random() * 99);
             numberBox.textContent = randomNum.toString().padStart(2, '0');
             
-            // Add animation class
+            // Add click handler
             numberBox.addEventListener('click', function() {
-                this.classList.add('selected');
+                this.classList.toggle('selected');
             });
             
             numberContainer.appendChild(numberBox);
@@ -29,6 +29,23 @@ function initializeLottery() {
 }
 
 function setupEventListeners() {
+    // Add smooth scrolling for navigation
+    document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').slice(1);
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetSection) {
+                targetSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Play button click handler
     const playButton = document.querySelector('.btn-primary');
     if (playButton) {
         playButton.addEventListener('click', function() {
@@ -37,22 +54,21 @@ function setupEventListeners() {
             setTimeout(() => {
                 this.style.transform = 'scale(1)';
             }, 100);
-
-            // Generate new numbers
-            initializeLottery();
         });
     }
 }
 
-// Add smooth scrolling for navigation
-document.querySelectorAll('nav a').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('href');
-        if (targetId !== '#') {
-            document.querySelector(targetId).scrollIntoView({
-                behavior: 'smooth'
-            });
+// Add section IDs to match navigation
+function addSectionIds() {
+    const sections = document.querySelectorAll('section');
+    sections.forEach((section, index) => {
+        if (!section.id) {
+            section.id = `section-${index + 1}`;
         }
     });
-}); 
+}
+
+// Export functions for use in other scripts
+window.showLoginModal = showLoginModal;
+window.showRegisterModal = showRegisterModal;
+window.initializeLottery = initializeLottery; 
