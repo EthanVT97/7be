@@ -1,36 +1,19 @@
-<div class="container py-4">
-    <div class="row">
-        <!-- Live Results -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Live Results</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row" id="liveResults">
-                        <!-- Live results will be loaded here -->
-                        <div class="col-12 text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Next Draw -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Next Draw</h5>
-                </div>
-                <div class="card-body">
-                    <div id="countdown">
-                        <!-- Countdown will be added here -->
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="card">
+    <div class="card-header">
+        <h2>Latest Results</h2>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Draw Time</th>
+                    <th>Number</th>
+                </tr>
+            </thead>
+            <tbody id="resultsTable">
+                <!-- Results will be populated here -->
+            </tbody>
+        </table>
     </div>
 </div> 

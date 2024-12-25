@@ -22,3 +22,8 @@ Header set Access-Control-Allow-Origin "*"
 Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
 Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 </IfModule>
+
+# Force HTTPS
+RewriteCond % { HTTP:X-Forwarded-Proto } !https
+RewriteCond % { HTTPS } off
+RewriteRule ^ https://% { HTTP_HOST }% { REQUEST_URI } [L, R=301]

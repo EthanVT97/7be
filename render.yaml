@@ -12,7 +12,14 @@ services:
       - key: DB_USER
         value: sql12753941
       - key: DB_PASS
-        value: xPMZuuk5AZ
+        sync: false
       - key: JWT_SECRET
         generateValue: true
-    healthCheckPath: /health
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://twod3d-lottery.onrender.com
+    healthCheckPath: /health.php
+    autoDeploy: true
