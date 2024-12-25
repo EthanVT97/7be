@@ -1,14 +1,14 @@
 # Enable rewrite engine
 RewriteEngine On
 
-# Allow health check
+# Allow direct access to health.php
 RewriteRule ^health\.php$ - [L]
 
 # Handle Authorization header
 RewriteCond % { HTTP:Authorization } ^(.*)$
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 
-# Redirect all requests to index.php
+# Redirect all other requests to index.php
 RewriteCond % { REQUEST_FILENAME } !-f
 RewriteCond % { REQUEST_FILENAME } !-d
 RewriteRule ^(.*)$ index.php [QSA, L]
@@ -20,6 +20,6 @@ Header set X-Content-Type-Options "nosniff"
 Header set Referrer-Policy "strict-origin-when-cross-origin"
 
 # CORS headers
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET,POST,OPTIONS,PUT,DELETE"
-Header set Access-Control-Allow-Headers "Origin,X-Requested-With,Content-Type,Accept,Authorization"
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET,POST,OPTIONS,PUT,DELETE"
+Header always set Access-Control-Allow-Headers "Origin,X-Requested-With,Content-Type,Accept,Authorization"
