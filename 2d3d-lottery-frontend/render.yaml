@@ -2,8 +2,8 @@ services:
   - type: web
     name: twod3d-lottery
     env: static
-    buildCommand: npm install
-    staticPublishPath: ./public
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     headers:
       - path: /*
         name: Cache-Control
