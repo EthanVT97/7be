@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: twod3d-lottery-api
+    env: php
+    buildCommand: composer install
+    startCommand: heroku-php-apache2 public/
+    healthCheckPath: /health.php
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: twod3d-lottery-db
+          property: host
+      - key: DB_NAME
+        fromDatabase:
+          name: twod3d-lottery-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: twod3d-lottery-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: twod3d-lottery-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://twod3d-lottery.onrender.com
+
+databases:
+  - name: twod3d-lottery-db
+    plan: free 

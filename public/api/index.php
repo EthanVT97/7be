@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: https://twod3d-lottery.onrender.com');
@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 try {
-    // Route handling will go here
     echo json_encode(['status' => 'API is running']);
 } catch (Exception $e) {
     http_response_code(500);
@@ -20,5 +19,4 @@ try {
         'error' => 'Internal Server Error',
         'message' => $e->getMessage()
     ]);
-}
-?>
+} 

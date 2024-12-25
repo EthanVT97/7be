@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: twod3d-lottery
+    env: static
+    buildCommand: npm install
+    staticPublishPath: ./public
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000 

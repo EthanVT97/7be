@@ -49,6 +49,10 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         const result = await response.json();
         
         if (result.success) {
+            // Store token
+            localStorage.setItem('token', result.token);
+            localStorage.setItem('user', JSON.stringify(result.user));
+            
             // Hide modal
             bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
             
