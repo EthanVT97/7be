@@ -1,85 +1,24 @@
-# Enable rewrite engine and follow symlinks
+# Enable rewrite engine
 RewriteEngine On
-Options +FollowSymLinks -MultiViews
-
-# Force HTTPS with proper redirect
-RewriteCond % { HTTPS } !=on [NC]
-RewriteRule ^(.*)$ https://% { HTTP_HOST }% { REQUEST_URI } [L, R=301]
 
 # Handle Authorization header
-RewriteCond % { HTTP:Authorization } ^(.*)
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+RewriteCond % { HTTP:Authorization } .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:% { HTTP:Authorization }]
 
 # Redirect all requests to router.php
 RewriteCond % { REQUEST_FILENAME } !-d
 RewriteCond % { REQUEST_FILENAME } !-f
-RewriteRule ^(.*)$ router.php [L, QSA]
+RewriteRule ^ router.php [L, QSA]
 
-# Security headers with improved CSP
-Header always set X-Content-Type-Options "nosniff"
+# Security headers
 Header always set X-Frame-Options "DENY"
 Header always set X-XSS-Protection "1; mode=block"
+Header always set X-Content-Type-Options "nosniff"
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
-Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-Header always set Content-Security-Policy "default-src 'self'; \
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; \
-    style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; \
-    img-src 'self' data: https:; \
-    font-src 'self' https://cdnjs.cloudflare.com; \
-    connect-src 'self' https://twod3d-lottery-api.onrender.com; \
-    frame-ancestors 'none'; \
-    form-action 'self'; \
-    base-uri 'self'; \
-    upgrade-insecure-requests;"
 
-# Prevent directory listing and protect sensitive files
-Options -Indexes
-ServerSignature Off
-
-# Block access to sensitive files
-<FilesMatch "^\.">
-Require all denied
-</FilesMatch>
-
-<FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
-Require all denied
-</FilesMatch>
-
-# Protect against common exploits
-<IfModule mod_rewrite.c>
-RewriteCond % { REQUEST_METHOD } ^(HEAD | TRACE | DELETE | TRACK | DEBUG)$ [NC]
-RewriteRule .* - [F]
-</IfModule>
-
-# Protect .env and configuration files
-<Files ~ "^\.env|config\.php|composer\.json|composer\.lock">
-Require all denied
-</Files>
-
-# CORS headers
+# Enable CORS
 <IfModule mod_headers.c>
-SetEnvIf Origin "^http(s)?://(.+\.)?(twod3d-lottery\.onrender\.com|localhost:3000)$" origin_is=$0
-Header always set Access-Control-Allow-Origin % { origin_is }e env=origin_is
-Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
-Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-Header always set Access-Control-Allow-Credentials "true"
-    
-# Handle preflight requests
-RewriteCond % { REQUEST_METHOD } =OPTIONS
-RewriteRule .* - [R=200, L]
-</IfModule>
-
-# Cache control
-<IfModule mod_expires.c>
-ExpiresActive On
-ExpiresByType image/jpg "access plus 1 year"
-ExpiresByType image/jpeg "access plus 1 year"
-ExpiresByType image/png "access plus 1 year"
-ExpiresByType text/css "access plus 1 month"
-ExpiresByType application/javascript "access plus 1 month"
-</IfModule>
-
-# Compress text files
-<IfModule mod_deflate.c>
-AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 </IfModule>

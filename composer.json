@@ -1,25 +1,15 @@
 {
-    "name": "yourusername/2d3d-lottery",
-    "description": "A modern lottery management system",
+    "name": "2d3d/lottery",
+    "description": "2D3D Lottery System",
     "type": "project",
     "require": {
-        "php": ">=7.4",
+        "php": "^8.1",
         "ext-pdo": "*",
         "ext-json": "*"
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
+            "App\\": "includes/"
         }
-    },
-    "authors": [
-        {
-            "name": "Your Name",
-            "email": "your.email@example.com"
-        }
-    ],
-    "minimum-stability": "stable",
-    "require-dev": {
-        "phpunit/phpunit": "^9.5"
     }
 }

@@ -1,13 +1,18 @@
 services:
   - type: web
     name: 2d3d-lottery
-    env: static
-    buildCommand: npm install
-    staticPublishPath: ./public
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    env: php
+    buildCommand: composer install --no-dev --optimize-autoloader
+    startCommand: vendor/bin/heroku-php-apache2 public/
     envVars:
-      - key: NODE_VERSION
-        value: 16.0.0
+      - key: DB_HOST
+        value: sql12.freesqldatabase.com
+      - key: DB_NAME
+        value: sql12753941
+      - key: DB_USER
+        value: sql12753941
+      - key: DB_PASS
+        value: xPMZuuk5AZ
+      - key: JWT_SECRET
+        generateValue: true
+    healthCheckPath: /health
