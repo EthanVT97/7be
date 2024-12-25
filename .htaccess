@@ -5,13 +5,13 @@ RewriteEngine On
 RewriteRule ^health\.php$ - [L]
 
 # Handle Authorization header
-RewriteCond % { HTTP:Authorization } ^(.*)
-RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+RewriteCond % { HTTP:Authorization } ^(.*)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 
 # Redirect all requests to index.php
 RewriteCond % { REQUEST_FILENAME } !-f
 RewriteCond % { REQUEST_FILENAME } !-d
-RewriteRule ^ index.php [QSA, L]
+RewriteRule ^(.*)$ index.php [QSA, L]
 
 # Security headers
 Header set X-Frame-Options "DENY"
