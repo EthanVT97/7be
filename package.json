@@ -1,22 +1,12 @@
 {
   "name": "2d3d-lottery",
   "version": "1.0.0",
-  "description": "A modern lottery management system",
-  "main": "index.js",
+  "description": "2D3D Lottery Static Site",
   "scripts": {
-    "start": "php -S localhost:8000",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint public/js/**/*.js",
-    "lint:fix": "eslint public/js/**/*.js --fix"
+    "build": "cp -r public/* dist/"
   },
   "dependencies": {
-    "bootstrap": "^5.3.2",
-    "@fortawesome/fontawesome-free": "^6.4.0"
-  },
-  "devDependencies": {
-    "eslint": "^8.45.0",
-    "prettier": "^3.0.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-prettier": "^5.0.0"
+    "bootstrap": "^5.3.0",
+    "font-awesome": "^6.0.0"
   }
 }
