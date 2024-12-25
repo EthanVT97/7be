@@ -35,4 +35,15 @@ class Connection {
         
         return self::$instance;
     }
+
+    public static function test() {
+        try {
+            $connection = self::getInstance();
+            $connection->query('SELECT 1');
+            return true;
+        } catch (PDOException $e) {
+            error_log("Health check failed: " . $e->getMessage());
+            return false;
+        }
+    }
 }

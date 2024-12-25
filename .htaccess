@@ -1,3 +1,6 @@
+# Set server name
+ServerName localhost
+
 # Enable Apache rewrite engine
 RewriteEngine On
 
