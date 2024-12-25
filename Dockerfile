@@ -2,10 +2,17 @@
 FROM composer:2.6 as composer
 
 WORKDIR /app
-COPY composer.json ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
+# Copy only composer files first
+COPY composer.json composer.lock ./
+
+# Install dependencies
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
+
+# Copy the rest of the application
 COPY . .
+
+# Generate optimized autoload files
 RUN composer dump-autoload --optimize
 
 # Production stage
@@ -32,6 +39,9 @@ RUN docker-php-ext-install \
     bcmath \
     gd
 
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
+
 # Configure Apache
 RUN a2enmod rewrite headers expires
 RUN sed -i 's/ServerTokens OS/ServerTokens Prod/' /etc/apache2/conf-available/security.conf
@@ -51,12 +61,7 @@ RUN chown -R www-data:www-data /var/www/html
 # Set up environment variables
 ENV APP_ENV=production \
     APP_DEBUG=false \
-    LOG_CHANNEL=stderr \
-    DB_CONNECTION=mysql \
-    DB_HOST=sql12.freesqldatabase.com \
-    DB_NAME=sql12753941 \
-    DB_USER=sql12753941 \
-    DB_PASS=xPMZuuk5AZ
+    LOG_CHANNEL=stderr
 
 # Security headers
 RUN echo 'Header set X-Content-Type-Options "nosniff"' >> /etc/apache2/conf-available/security.conf
@@ -69,7 +74,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s \
-    CMD curl -f http://localhost/api/health || exit 1
+    CMD curl -f http://localhost/health.php || exit 1
 
 # Start Apache
 CMD ["apache2-foreground"]
