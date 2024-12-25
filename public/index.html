@@ -8,6 +8,8 @@
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
     <!-- Favicon -->
@@ -15,129 +17,113 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-gradient">
         <div class="container">
-            <a class="navbar-brand" href="#">7K Online နှစ်လုံး သုံးလုံး</a>
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="img/logo.png" alt="7K Logo" class="me-2" width="40" height="40">
+                <span>7K Online နှစ်လုံး သုံးလုံး</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" onclick="loadPage('home')">Home</a>
+                        <a class="nav-link active" href="#" onclick="loadPage('home')">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
                     </li>
                     <li class="nav-item auth-required" style="display: none;">
-                        <a class="nav-link" href="#" onclick="loadPage('history')">History</a>
+                        <a class="nav-link" href="#" onclick="loadPage('history')">
+                            <i class="fas fa-history me-1"></i> History
+                        </a>
                     </li>
                     <li class="nav-item auth-required" style="display: none;">
-                        <a class="nav-link" href="#" onclick="loadPage('profile')">Profile</a>
+                        <a class="nav-link" href="#" onclick="loadPage('profile')">
+                            <i class="fas fa-user me-1"></i> Profile
+                        </a>
                     </li>
                 </ul>
-                <div class="d-flex">
+                <div class="d-flex align-items-center">
+                    <!-- Language Selector -->
+                    <div class="dropdown me-3">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-globe me-1"></i> Language
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="setLanguage('en')">English</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setLanguage('my')">မြန်မာ</a></li>
+                        </ul>
+                    </div>
+                    <!-- Auth Buttons -->
                     <div class="guest-only">
-                        <button class="btn btn-outline-light me-2" id="loginBtn">Login</button>
-                        <button class="btn btn-light" id="registerBtn">Register</button>
+                        <button class="btn btn-outline-light me-2" id="loginBtn">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login
+                        </button>
+                        <button class="btn btn-light" id="registerBtn">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </button>
                     </div>
                     <div class="auth-required" style="display: none;">
-                        <button class="btn btn-light" id="logoutBtn">Logout</button>
+                        <button class="btn btn-light" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Alert Container -->
-    <div id="alertContainer" class="container mt-3"></div>
-
     <!-- Main Content -->
-    <div class="container mt-4">
-        <!-- Live Results -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h2 class="mb-0">Live Results</h2>
-            </div>
-            <div class="card-body">
-                <div id="liveResults" class="row">
-                    <p class="text-center">Loading results...</p>
-                </div>
+    <main class="container py-4">
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
         </div>
 
-        <!-- Main Content Area -->
+        <!-- Content Area -->
         <div id="mainContent"></div>
-    </div>
+    </main>
 
-    <!-- Login Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Login</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>About Us</h5>
+                    <p>7K Online နှစ်လုံး သုံးလုံး - Your trusted lottery platform</p>
                 </div>
-                <div class="modal-body">
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" name="username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" name="password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
-                    </form>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-light">Terms & Conditions</a></li>
+                        <li><a href="#" class="text-light">Privacy Policy</a></li>
+                        <li><a href="#" class="text-light">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope me-2"></i> support@7konline.com</li>
+                        <li><i class="fas fa-phone me-2"></i> +95 123 456 789</li>
+                    </ul>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Register Modal -->
-    <div class="modal fade" id="registerModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Register</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="registerForm">
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" name="username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" name="password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" name="confirmPassword" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Register</button>
-                    </form>
-                </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 7K Online. All rights reserved.</p>
             </div>
         </div>
-    </div>
+    </footer>
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Services -->
-    <script type="module" src="js/services/monitoring.js"></script>
-    <script type="module" src="js/services/security.js"></script>
-    <script type="module" src="js/services/api.js"></script>
-    
-    <!-- App Configuration and Main Logic -->
-    <script src="js/config.js"></script>
-    <script src="js/services/api.js"></script>
-    <script src="js/services/errorHandler.js"></script>
-    <script src="js/services/monitoring.js"></script>
-    <script src="js/app.js"></script>
+    <!-- Custom JS -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
