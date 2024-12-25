@@ -5,10 +5,10 @@ RewriteEngine On
 RewriteCond % { HTTP:Authorization } .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:% { HTTP:Authorization }]
 
-# Redirect all requests to router.php
+# Redirect all requests to index.php
 RewriteCond % { REQUEST_FILENAME } !-d
 RewriteCond % { REQUEST_FILENAME } !-f
-RewriteRule ^ router.php [L, QSA]
+RewriteRule ^ index.php [L, QSA]
 
 # Security headers
 Header always set X-Frame-Options "DENY"
@@ -16,11 +16,12 @@ Header always set X-XSS-Protection "1; mode=block"
 Header always set X-Content-Type-Options "nosniff"
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
-# Enable CORS
+# Enable CORS for API
 <IfModule mod_headers.c>
-Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Origin "https://twod3d-lottery.onrender.com"
 Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
 Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+Header set Access-Control-Allow-Credentials "true"
 </IfModule>
 
 # Force HTTPS

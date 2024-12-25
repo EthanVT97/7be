@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: 2d3d-lottery
+    name: twod3d-lottery-api
     env: php
     buildCommand: composer install --no-dev --optimize-autoloader
     startCommand: vendor/bin/heroku-php-apache2 public/
@@ -15,11 +15,7 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: false
-      - key: APP_URL
+      - key: CORS_ORIGIN
         value: https://twod3d-lottery.onrender.com
     healthCheckPath: /health.php
     autoDeploy: true
