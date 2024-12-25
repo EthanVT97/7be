@@ -2,9 +2,21 @@ services:
   - type: web
     name: 2d3d-lottery
     env: php
-    buildCommand: composer install
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      npm install
+      npm run build
     startCommand: heroku-php-apache2 public/
     healthCheckPath: /health.php
     envVars:
       - key: PHP_VERSION
         value: 8.1
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+    staticPublishPath: ./public
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
