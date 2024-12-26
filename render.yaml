@@ -1,9 +1,10 @@
 services:
   - type: web
     name: 2d3d-lottery-api
-    env: php
-    buildCommand: composer install --no-dev
-    startCommand: php -S 0.0.0.0:$PORT -t public
+    env: docker
+    region: singapore
+    plan: free
+    healthCheckPath: /health
     envVars:
       - key: DB_HOST
         fromDatabase:
@@ -25,6 +26,10 @@ services:
         fromDatabase:
           name: db_2d3d_lottery_db
           property: password
+      - key: DATABASE_URL
+        fromDatabase:
+          name: db_2d3d_lottery_db
+          property: connectionString
       - key: APP_ENV
         value: production
 
@@ -33,3 +38,4 @@ databases:
     databaseName: db_2d3d_lottery_db
     user: db_2d3d_lottery_db_user
     plan: free
+    region: singapore
