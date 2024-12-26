@@ -1,49 +1,70 @@
-# Build stage
-FROM node:18.17.0-alpine as builder
-
-# Set working directory
-WORKDIR /app
-
-# Install dependencies first (for better caching)
-COPY package*.json ./
-
-# Install dependencies with specific npm version and clean install
-RUN npm install -g npm@10.8.2 && \
-    npm ci --only=production
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN npm run build
-
-# Production stage
 FROM php:8.2-apache
 
-# Install dependencies and Apache modules
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    libzip-dev \
     libssl-dev \
     ssl-cert \
-    && rm -rf /var/lib/apt/lists/* \
-    && a2enmod rewrite headers ssl proxy proxy_http http2
+    zip \
+    unzip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_pgsql \
+    pgsql \
+    zip \
+    opcache
+
+# Enable Apache modules
+RUN a2enmod \
+    rewrite \
+    headers \
+    ssl \
+    proxy \
+    proxy_http \
+    http2
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy Apache configuration
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy built assets from builder stage
-COPY --from=builder /app/public /app/public
+# Set working directory
+WORKDIR /var/www/html
 
-# Set permissions
-RUN chown -R www-data:www-data /app/public \
-    && chmod -R 755 /app/public
+# Create required directories first
+RUN mkdir -p /var/log/apache2 \
+    && mkdir -p /var/run/apache2 \
+    && mkdir -p storage/logs \
+    && mkdir -p storage/framework/cache \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views
+
+# Copy composer files
+COPY composer.json composer.lock ./
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# Copy application files
+COPY . .
+
+# Copy PHP configuration
+COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Copy health check script
 COPY scripts/healthcheck.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/healthcheck.sh
 
-# Create required directories
-RUN mkdir -p /var/log/apache2 \
-    && mkdir -p /var/run/apache2
+# Set permissions (after all files are copied and directories are created)
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 777 storage
 
 # Environment variables
 ENV APACHE_LOG_DIR=/var/log/apache2 \
