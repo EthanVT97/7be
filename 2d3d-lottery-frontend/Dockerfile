@@ -18,8 +18,8 @@ COPY public/ /var/www/html/
 COPY .htaccess /var/www/html/.htaccess
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Ensure index.html exists
-RUN touch /var/www/html/index.html
+# Remove any static HTML files except index.html
+RUN find /var/www/html -type f -name "*.html" ! -name "index.html" -delete
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \

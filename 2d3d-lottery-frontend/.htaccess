@@ -11,13 +11,19 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Don't rewrite files or directories
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
+# Allow static assets
+RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Rewrite everything else to index.html to allow html5 state links
+# Prevent direct access to .html files except index.html
+RewriteCond %{REQUEST_URI} \.html$ [NC]
+RewriteCond %{REQUEST_URI} !^/index\.html$ [NC]
 RewriteRule ^ index.html [L]
+
+# Rewrite everything else to index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [L,QSA]
 
 # Security headers
 Header set X-Content-Type-Options "nosniff"
