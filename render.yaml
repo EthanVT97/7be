@@ -1,73 +1,25 @@
 services:
-  # Static frontend
   - type: web
-    name: 2d3d-lottery
-    env: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./build
+    name: twod3d-lottery
+    env: docker
+    rootDirectory: 2d3d-lottery-frontend
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./2d3d-lottery-frontend
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: API_URL
+        value: https://twod3d-lottery-api-q68w.onrender.com
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
     routes:
-      # API routes
-      - type: rewrite
-        source: /api/*
-        destination: https://twod3d-lottery-api-q68w.onrender.com/api/:splat
-
-      # SPA routes - handle client-side routing
       - type: rewrite
         source: /*
         destination: /index.html
-
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: public, max-age=31536000
-      - path: /static/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /index.html
-        name: Cache-Control
-        value: no-cache
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-
-  # Backend API
-  - type: web
-    name: twod3d-lottery-api
-    env: php
-    buildCommand: |
-      apt-get update && apt-get install -y \
-        libpq-dev \
-        redis-server
-      pecl install redis
-      docker-php-ext-enable redis
-      composer install --no-dev --optimize-autoloader
-    startCommand: heroku-php-apache2 public/
-    routes:
-      # Auth endpoints
-      - type: rewrite
-        source: /api/auth/*
-        destination: /api/auth/index.php
-
-      # Status endpoint
-      - type: rewrite
-        source: /api/status
-        destination: /api/status/index.php
-
-      # Health check
-      - type: rewrite
-        source: /health
-        destination: /health.php
-
-    headers:
-      - path: /*
-        name: Access-Control-Allow-Origin
-        value: https://twod3d-lottery.onrender.com
-      - path: /*
-        name: Access-Control-Allow-Methods
-        value: GET, POST, OPTIONS, PUT, DELETE
-      - path: /*
-        name: Access-Control-Allow-Headers
-        value: Content-Type, Authorization
