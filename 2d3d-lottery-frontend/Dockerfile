@@ -1,3 +1,21 @@
+FROM node:18 as builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source files
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Production stage
 FROM php:8.2-apache
 
 # Install dependencies
@@ -13,8 +31,10 @@ RUN a2enmod rewrite headers ssl
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
-COPY public/ /var/www/html/
+# Copy built files from builder stage
+COPY --from=builder /app/build/ /var/www/html/
+
+# Copy configuration files
 COPY .htaccess /var/www/html/.htaccess
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
