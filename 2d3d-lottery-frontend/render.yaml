@@ -19,7 +19,7 @@ services:
       - key: DB_PASS
         sync: false
       - key: API_URL
-        value: https://twod3d-lottery-api-q68w.onrender.com
+        value: https://twod3dbe.onrender.com
     headers:
       - path: /*
         name: X-Frame-Options
@@ -45,4 +45,4 @@ services:
     routes:
       - type: rewrite
         source: /*
-        destination: /index.php
+        destination: /index.html
