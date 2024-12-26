@@ -34,12 +34,12 @@ const routes = {
   
   // API routes
   api: {
-    base: 'https://twod3d-lottery-api-q68w.onrender.com',
+    base: 'https://twod3dbe.onrender.com',
     auth: {
-      login: '/api/auth/login.php',
-      register: '/api/auth/register.php',
-      refresh: '/api/auth/refresh.php',
-      logout: '/api/auth/logout.php'
+      login: '/api/auth/login',
+      register: '/api/auth/register',
+      refresh: '/api/auth/refresh',
+      logout: '/api/auth/logout'
     },
     lottery: {
       list: '/api/lottery',
