@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: twod3d-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://twod3dbe.onrender.com
+      - key: REACT_APP_API_TIMEOUT
+        value: 30000
+      - key: NODE_VERSION
+        value: 18.16.0
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    healthCheckPath: /health
+    autoDeploy: true 
