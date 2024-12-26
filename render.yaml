@@ -26,6 +26,7 @@ services:
     name: 2d3d-lottery-api
     env: php
     buildCommand: |
+      composer require predis/predis
       apt-get update && apt-get install -y libpq-dev
       docker-php-ext-install pdo pdo_pgsql
       composer install
@@ -50,6 +51,8 @@ services:
           property: password
       - key: POSTGRES_PORT
         value: "5432"
+      - key: REDIS_URL
+        value: "redis://localhost:6379"
 
 databases:
   - name: 2d3d-lottery-db

@@ -1,22 +1,25 @@
 <?php
+require_once __DIR__ . '/../vendor/autoload.php';
 
 header('Content-Type: application/json');
 
+$health = [
+    'status' => 'healthy',
+    'timestamp' => date('Y-m-d H:i:s'),
+    'checks' => [
+        'database' => [
+            'status' => 'unknown',
+            'error' => null
+        ],
+        'redis' => [
+            'status' => 'unknown',
+            'error' => null
+        ]
+    ]
+];
+
 try {
-    // Check environment variables
-    $requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD'];
-    $missingEnvVars = [];
-    foreach ($requiredEnvVars as $var) {
-        if (!getenv($var)) {
-            $missingEnvVars[] = $var;
-        }
-    }
-
-    if (!empty($missingEnvVars)) {
-        throw new Exception('Missing required environment variables: ' . implode(', ', $missingEnvVars));
-    }
-
-    // Test database connection
+    // Test PostgreSQL
     $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
         getenv('POSTGRES_HOST'), 
         getenv('POSTGRES_DB'),
@@ -29,28 +32,36 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
-    // Test query
     $stmt = $pdo->query('SELECT version()');
     $version = $stmt->fetch(PDO::FETCH_COLUMN);
+    $health['checks']['database'] = [
+        'status' => 'connected',
+        'version' => $version
+    ];
 
-    echo json_encode([
-        'status' => 'healthy',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'checks' => [
-            'database' => [
-                'status' => 'connected',
-                'version' => $version
-            ],
-            'environment' => 'configured'
-        ]
-    ]);
+    // Test Redis if available
+    if (class_exists('Predis\Client')) {
+        $redis = new Predis\Client(getenv('REDIS_URL'));
+        $redis->ping();
+        $health['checks']['redis'] = [
+            'status' => 'connected'
+        ];
+    }
 
-} catch (Exception $e) {
-    error_log('Health check failed: ' . $e->getMessage());
-    http_response_code(503);
-    echo json_encode([
-        'status' => 'unhealthy',
-        'timestamp' => date('Y-m-d H:i:s'),
+} catch (PDOException $e) {
+    $health['status'] = 'unhealthy';
+    $health['checks']['database'] = [
+        'status' => 'error',
         'error' => $e->getMessage()
-    ]);
+    ];
+    http_response_code(503);
+} catch (Exception $e) {
+    $health['status'] = 'unhealthy';
+    $health['checks']['redis'] = [
+        'status' => 'error',
+        'error' => $e->getMessage()
+    ];
+    http_response_code(503);
 }
+
+echo json_encode($health, JSON_PRETTY_PRINT);
