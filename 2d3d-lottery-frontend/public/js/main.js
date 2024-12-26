@@ -1,51 +1,45 @@
-<<<<<<< HEAD
-// Load lottery numbers
-function loadLotteryNumbers() {
-    const container = document.querySelector('.lottery-numbers');
-    if (!container) return;
-
-    // Example numbers (replace with API call)
-    const numbers = ['12', '34', '56', '78', '90'];
-    
-    container.innerHTML = numbers.map(num => `
-        <div class="number-box">
-            ${num}
-        </div>
-    `).join('');
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadLotteryNumbers();
-}); 
-=======
 document.addEventListener('DOMContentLoaded', function() {
     initializeLottery();
     setupEventListeners();
+    addSectionIds();
 });
 
 function initializeLottery() {
     const numberContainer = document.querySelector('.lottery-numbers');
-    if (numberContainer) {
-        // Clear existing numbers
-        numberContainer.innerHTML = '';
+    if (!numberContainer) return;
+
+    // Clear existing numbers
+    numberContainer.innerHTML = '';
+    
+    // Generate sample numbers (replace with API call in production)
+    for (let i = 1; i <= 10; i++) {
+        const numberBox = document.createElement('div');
+        numberBox.className = 'number-box';
         
-        // Generate sample numbers
-        for (let i = 1; i <= 10; i++) {
-            const numberBox = document.createElement('div');
-            numberBox.className = 'number-box';
-            
-            // Generate random 2-digit number with leading zero
-            const randomNum = Math.floor(Math.random() * 99);
-            numberBox.textContent = randomNum.toString().padStart(2, '0');
-            
-            // Add click handler
-            numberBox.addEventListener('click', function() {
-                this.classList.toggle('selected');
-            });
-            
-            numberContainer.appendChild(numberBox);
-        }
+        // Generate random 2-digit number with leading zero
+        const randomNum = Math.floor(Math.random() * 99);
+        numberBox.textContent = randomNum.toString().padStart(2, '0');
+        
+        // Add click handler
+        numberBox.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            updateSelectedNumbers();
+        });
+        
+        numberContainer.appendChild(numberBox);
+    }
+}
+
+function updateSelectedNumbers() {
+    const selectedNumbers = [];
+    document.querySelectorAll('.number-box.selected').forEach(box => {
+        selectedNumbers.push(box.textContent);
+    });
+    
+    // Update selected numbers display
+    const selectedDisplay = document.querySelector('.selected-numbers');
+    if (selectedDisplay) {
+        selectedDisplay.textContent = selectedNumbers.join(', ') || 'No numbers selected';
     }
 }
 
@@ -70,11 +64,32 @@ function setupEventListeners() {
     const playButton = document.querySelector('.btn-primary');
     if (playButton) {
         playButton.addEventListener('click', function() {
+            // Check if user is logged in
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.auth.showLoginModal();
+                return;
+            }
+
             // Animate button
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 this.style.transform = 'scale(1)';
             }, 100);
+
+            // Get selected numbers
+            const selectedNumbers = [];
+            document.querySelectorAll('.number-box.selected').forEach(box => {
+                selectedNumbers.push(box.textContent);
+            });
+
+            if (selectedNumbers.length === 0) {
+                window.auth.showAlert('Please select at least one number', 'warning');
+                return;
+            }
+
+            // TODO: Submit selected numbers to API
+            console.log('Selected numbers:', selectedNumbers);
         });
     }
 }
@@ -90,7 +105,5 @@ function addSectionIds() {
 }
 
 // Export functions for use in other scripts
-window.showLoginModal = showLoginModal;
-window.showRegisterModal = showRegisterModal;
-window.initializeLottery = initializeLottery; 
->>>>>>> aa145722f6a011a22d3e9f2b280787ab3c45a8fc
+window.initializeLottery = initializeLottery;
+window.updateSelectedNumbers = updateSelectedNumbers;

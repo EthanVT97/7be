@@ -1,41 +1,9 @@
-<<<<<<< HEAD
-import { ConnectionTest } from './utils/connection-test.js';
-
-// Check connections on app start
-async function checkConnections() {
-    const backendStatus = await ConnectionTest.checkConnection();
-    const dbStatus = await ConnectionTest.testDatabaseConnection();
-
-    if (backendStatus.status === 'disconnected') {
-        showError('Backend server is not responding');
-        return false;
-    }
-
-    if (dbStatus.status === 'disconnected') {
-        showError('Database connection failed');
-        return false;
-    }
-
-    console.log('All connections successful');
-    return true;
-}
-
-// Show error message
-function showError(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'alert alert-danger';
-    errorDiv.textContent = message;
-    document.body.insertBefore(errorDiv, document.body.firstChild);
-}
-
-// Run connection test
-document.addEventListener('DOMContentLoaded', checkConnections); 
-=======
 import config from './config.js';
 import { api } from './services/api.js';
 import { security } from './services/security.js';
 import { monitoring } from './services/monitoring.js';
 import ErrorHandler from './services/errorHandler.js';
+import { ConnectionTest } from './utils/connection-test.js';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -44,6 +12,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initializeApp() {
     try {
+        // Check connections
+        const backendStatus = await ConnectionTest.checkConnection();
+        const dbStatus = await ConnectionTest.testDatabaseConnection();
+
+        if (backendStatus.status === 'disconnected') {
+            ErrorHandler.handle(new Error('Backend server is not responding'));
+            return;
+        }
+
+        if (dbStatus.status === 'disconnected') {
+            ErrorHandler.handle(new Error('Database connection failed'));
+            return;
+        }
+
         // Setup event listeners
         setupEventListeners();
         
@@ -112,4 +94,3 @@ function setLanguage(lang) {
 // Make functions available globally
 window.loadPage = loadPage;
 window.setLanguage = setLanguage;
->>>>>>> aa145722f6a011a22d3e9f2b280787ab3c45a8fc
