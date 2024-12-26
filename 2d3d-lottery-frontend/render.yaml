@@ -1,25 +1,12 @@
 services:
   - type: web
     name: twod3d-lottery
-    env: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    env: php
+    buildCommand: ""
+    startCommand: heroku-php-apache2 public/
     envVars:
-      - key: NODE_ENV
+      - key: APP_ENV
         value: production
-      - key: REACT_APP_API_URL
-        value: https://twod3d-lottery-api-q68w.onrender.com
-    routes:
-      # API routes
-      - type: rewrite
-        source: /api/*
-        destination: https://twod3d-lottery-api-q68w.onrender.com/api/:splat
-
-      # SPA routes - handle client-side routing
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
     headers:
       - path: /*
         name: Cache-Control
