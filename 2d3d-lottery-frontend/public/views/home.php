@@ -151,19 +151,83 @@ $pageTitle = 'ပင်မစာမျက်နှာ';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Fetch latest results
-    fetch('https://twod3d-lottery-api-q68w.onrender.com/api/results/latest')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('latest2D').textContent = data.results.twod || '--';
-                document.getElementById('latest2DTime').textContent = data.results.twod_time || 'No recent results';
-                document.getElementById('latest3D').textContent = data.results.threed || '---';
-                document.getElementById('latest3DTime').textContent = data.results.threed_time || 'No recent results';
+    const setLoadingState = (loading = true) => {
+        const elements = ['latest2D', 'latest2DTime', 'latest3D', 'latest3DTime'];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (loading) {
+                el.classList.add('text-muted');
+                if (id.includes('Time')) {
+                    el.textContent = 'Loading...';
+                } else {
+                    el.textContent = id.includes('2D') ? '--' : '---';
+                }
+            } else {
+                el.classList.remove('text-muted');
             }
-        })
-        .catch(error => {
-            console.error('Error fetching results:', error);
         });
+    };
+
+    const setErrorState = (error) => {
+        const elements = {
+            'latest2D': '--',
+            'latest2DTime': error,
+            'latest3D': '---',
+            'latest3DTime': error
+        };
+        Object.entries(elements).forEach(([id, text]) => {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.classList.add('text-danger');
+        });
+    };
+
+    // Initial loading state
+    setLoadingState(true);
+
+    // Fetch latest results with retry
+    const fetchResults = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch('/api/results/latest', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    setLoadingState(false);
+                    document.getElementById('latest2D').textContent = data.results.twod || '--';
+                    document.getElementById('latest2DTime').textContent = data.results.twod_time || 'No recent results';
+                    document.getElementById('latest3D').textContent = data.results.threed || '---';
+                    document.getElementById('latest3DTime').textContent = data.results.threed_time || 'No recent results';
+                    return;
+                } else if (data.error) {
+                    throw new Error(data.message || 'Failed to load results');
+                }
+            } catch (error) {
+                console.error(`Attempt ${i + 1} failed:`, error);
+                if (i === retries - 1) {
+                    setErrorState('Server is not responding. Please try again later.');
+                } else {
+                    // Wait before retrying (exponential backoff)
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+                }
+            }
+        }
+    };
+
+    fetchResults();
+
+    // Refresh results every 5 minutes
+    setInterval(() => fetchResults(1), 300000);
 });
 </script> 

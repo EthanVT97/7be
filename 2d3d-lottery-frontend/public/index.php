@@ -43,29 +43,79 @@ if (preg_match('/^\/api\//', $_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI']
     // Define allowed origins
     $allowedOrigins = [
         'https://twod3d.onrender.com',
+        'http://twod3d.onrender.com',
         'https://twod3d-lottery-api-q68w.onrender.com',
+        'http://twod3d-lottery-api-q68w.onrender.com',
+        'http://localhost:3000',
+        'http://localhost:8080',
         'chrome-extension://majdfhpaihoncoakbjgbdhglocklcgno'
     ];
 
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
 
     // Set CORS headers
     if (in_array($origin, $allowedOrigins)) {
         header('Access-Control-Allow-Origin: ' . $origin);
     } else {
-        header('Access-Control-Allow-Origin: https://twod3d.onrender.com');
+        header('Access-Control-Allow-Origin: *');
     }
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, Accept, Origin, X-Requested-With, X-CSRF-Token');
     header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Max-Age: 86400');
-    header('Vary: Origin');
+    header('Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
 
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         http_response_code(204);
         exit();
     }
 
+    // Forward API requests to backend
+    if (preg_match('/^\/api\/results\/latest/', $_SERVER['REQUEST_URI'])) {
+        $apiUrl = 'https://twod3d-lottery-api-q68w.onrender.com/api/results/latest';
+        
+        // Set timeout options
+        $ctx = stream_context_create([
+            'http' => [
+                'timeout' => 5,
+                'header' => [
+                    'Accept: application/json',
+                    'Content-Type: application/json',
+                    'User-Agent: 2D3D-Lottery-Frontend/1.0'
+                ]
+            ]
+        ]);
+
+        try {
+            $response = @file_get_contents($apiUrl, false, $ctx);
+            
+            if ($response === false) {
+                // Handle backend server error
+                http_response_code(503);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Backend server is not responding',
+                    'message' => 'Please try again later'
+                ]);
+                exit();
+            }
+
+            // Forward the response
+            echo $response;
+            exit();
+        } catch (Exception $e) {
+            // Handle any other errors
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Internal server error',
+                'message' => 'An unexpected error occurred'
+            ]);
+            exit();
+        }
+    }
+
+    // Default API response
     $response = [
         'name' => '2D3D Lottery API',
         'version' => '1.0.0',
@@ -97,7 +147,7 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('X-XSS-Protection: 1; mode=block');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header('Content-Security-Policy: default-src \'self\' \'unsafe-inline\' \'unsafe-eval\' https:; img-src \'self\' data: https:; style-src \'self\' \'unsafe-inline\' https:; font-src \'self\' data: https:;');
+header('Content-Security-Policy: default-src \'self\' \'unsafe-inline\' \'unsafe-eval\' https:; img-src \'self\' data: https:; style-src \'self\' \'unsafe-inline\' https:; font-src \'self\' data: https:; connect-src \'self\' https://twod3d-lottery-api-q68w.onrender.com https://twod3d.onrender.com;');
 
 // Get the current path
 $path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
