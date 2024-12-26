@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="my">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="2D3D ထီ - မြန်မာနိုင်ငံ၏ ယုံကြည်စိတ်ချရသော အွန်လိုင်းထီဝန်ဆောင်မှု"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>2D3D ထီ</title>
+    <!-- Myanmar Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Material UI Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @font-face {
+        font-family: 'Myanmar3';
+        src: url('%PUBLIC_URL%/fonts/Myanmar3.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Pyidaungsu';
+        src: url('%PUBLIC_URL%/fonts/Pyidaungsu.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      body {
+        font-family: 'Noto Sans Myanmar', 'Padauk', 'Pyidaungsu', 'Myanmar3', sans-serif;
+      }
+      /* Ensure Myanmar numbers are displayed correctly */
+      .myanmar-number {
+        -webkit-font-feature-settings: "kern" 1;
+        font-feature-settings: "kern" 1;
+        font-kerning: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>ဤဝဘ်ဆိုဒ်ကို အသုံးပြုရန် JavaScript ဖွင့်ထားရန် လိုအပ်ပါသည်။</noscript>
+    <div id="root"></div>
+  </body>
+</html> 
