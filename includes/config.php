@@ -25,46 +25,34 @@ define('SITE_URL', getenv('SITE_URL') ?: 'https://twod3d-lottery.onrender.com');
 
 // Initialize database connection
 try {
-    // Build DSN with SSL requirements for Render.com
-    $dsn = sprintf(
-        "pgsql:host=%s;port=%s;dbname=%s;sslmode=require;sslcert=;sslkey=;sslrootcert=",
-        DB_HOST,
-        DB_PORT,
-        DB_NAME
-    );
-    
-    // Connection options optimized for Render.com
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_PERSISTENT => true,
-        PDO::ATTR_TIMEOUT => 5,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_STRINGIFY_FETCHES => false
-    ];
+    // Check if we're using DATABASE_URL (Render.com style)
+    $databaseUrl = getenv('DATABASE_URL');
+    if ($databaseUrl) {
+        $conn = new PDO($databaseUrl);
+    } else {
+        // Build DSN with SSL requirements for Render.com
+        $dsn = sprintf(
+            "pgsql:host=%s;port=%s;dbname=%s;sslmode=require",
+            DB_HOST,
+            DB_PORT,
+            DB_NAME
+        );
+        
+        // Connection options optimized for Render.com
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_PERSISTENT => true,
+            PDO::ATTR_TIMEOUT => 5,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_STRINGIFY_FETCHES => false
+        ];
 
-    // Attempt connection with retries
-    $maxRetries = 3;
-    $retryDelay = 1;
-    $attempt = 0;
-    $lastError = null;
-
-    while ($attempt < $maxRetries) {
-        try {
-            $conn = new PDO($dsn, DB_USER, DB_PASS, $options);
-            // Test the connection
-            $conn->query('SELECT 1');
-            break;
-        } catch (PDOException $e) {
-            $lastError = $e;
-            $attempt++;
-            if ($attempt < $maxRetries) {
-                sleep($retryDelay);
-                continue;
-            }
-            throw $e;
-        }
+        $conn = new PDO($dsn, DB_USER, DB_PASS, $options);
     }
+
+    // Test the connection
+    $conn->query('SELECT 1');
 
 } catch (PDOException $e) {
     error_log("Database Connection Error: " . $e->getMessage());
