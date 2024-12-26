@@ -1,9 +1,9 @@
 services:
   - type: web
     name: twod3d-lottery
-    env: php
-    buildCommand: ""
-    startCommand: heroku-php-apache2 public/
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: APP_ENV
         value: production
