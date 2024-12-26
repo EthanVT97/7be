@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - 2D3D Lottery</title>
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/admin.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3>Admin Panel</h3>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#users">
+                        <i class="fas fa-users"></i> အသုံးပြုသူများ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#transactions">
+                        <i class="fas fa-money-bill-wave"></i> ငွေသွင်း/ထုတ်
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#settings">
+                        <i class="fas fa-cog"></i> ဆက်တင်များ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#reports">
+                        <i class="fas fa-chart-bar"></i> အစီရင်ခံစာများ
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <div class="user-info">
+                        <span class="me-2">Admin</span>
+                        <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> ထွက်ရန်
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div id="contentArea" class="content-body">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/bootstrap.bundle.min.js"></script>
+    <script src="../js/admin/admin.js" type="module"></script>
+</body>
+</html> 

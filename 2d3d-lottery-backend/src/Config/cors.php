@@ -1,6 +1,7 @@
 <?php
 // Allowed origins
 $allowedOrigins = [
+    'https://twod3d-lottery-api-q68w.onrender.com',
     'https://twod3d-lottery.onrender.com',
     'http://localhost:3000',
     'http://localhost:8080'

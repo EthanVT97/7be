@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D3D ထီ - အကောင့်</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-ticket-alt me-2"></i>2D3D ထီ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#profile">
+                            <i class="fas fa-user me-1"></i><span id="username"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="logout()">
+                            <i class="fas fa-sign-out-alt me-1"></i>ထွက်ရန်
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="container mt-3"></div>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        <!-- User Info Card -->
+        <div class="lottery-card">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h3>
+                        <i class="fas fa-user-circle me-2"></i>
+                        <span id="userFullName"></span>
+                    </h3>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h4>
+                        <i class="fas fa-wallet me-2"></i>
+                        လက်ကျန်ငွေ: <span id="userBalance">0</span> ကျပ်
+                    </h4>
+                    <button class="btn btn-outline-primary me-2" onclick="showTransactionHistory()">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        ငွေသွင်း/ထုတ် မှတ်တမ်း
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="showBettingHistory()">
+                        <i class="fas fa-history me-2"></i>
+                        ထီထိုးမှတ်တမ်း
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-md-6 mb-4">
+                <div class="lottery-card h-100">
+                    <h3>
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        ငွေကြေးစီမံခန့်ခွဲမှု
+                    </h3>
+                    <div class="d-grid gap-3 mt-4">
+                        <button class="btn btn-primary" onclick="showDepositModal()">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            ငွေသွင်းရန်
+                        </button>
+                        <button class="btn btn-primary" onclick="showWithdrawModal()">
+                            <i class="fas fa-minus-circle me-2"></i>
+                            ငွေထုတ်ရန်
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="lottery-card h-100">
+                    <h3>
+                        <i class="fas fa-history me-2"></i>
+                        မှတ်တမ်းများ
+                    </h3>
+                    <div class="d-grid gap-3 mt-4">
+                        <button class="btn btn-primary" onclick="showTransactionHistory()">
+                            <i class="fas fa-exchange-alt me-2"></i>
+                            ငွေသွင်း/ထုတ် မှတ်တမ်း
+                        </button>
+                        <button class="btn btn-primary" onclick="showBettingHistory()">
+                            <i class="fas fa-ticket-alt me-2"></i>
+                            ထီထိုးမှတ်တမ်း
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lottery Options -->
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="lottery-card h-100">
+                    <h3>
+                        <i class="fas fa-dice-two me-2"></i>
+                        ၂ လုံးထီ
+                    </h3>
+                    <p>နေ့စဉ် ၁၀:၃၀ နှင့် ၄:၃၀</p>
+                    <div class="d-grid">
+                        <button class="btn btn-primary" onclick="play2D()">
+                            <i class="fas fa-play me-2"></i>
+                            ထိုးရန်
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="lottery-card h-100">
+                    <h3>
+                        <i class="fas fa-dice-three me-2"></i>
+                        ၃ လုံးထီ
+                    </h3>
+                    <p>နေ့စဉ် ညနေ ၄:၃၀</p>
+                    <div class="d-grid">
+                        <button class="btn btn-primary" onclick="play3D()">
+                            <i class="fas fa-play me-2"></i>
+                            ထိုးရန်
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="lottery-card h-100">
+                    <h3>
+                        <i class="fas fa-globe-asia me-2"></i>
+                        လာအိုထီ
+                    </h3>
+                    <p>နေ့စဉ် ညနေ ၆:၃၀</p>
+                    <div class="d-grid">
+                        <button class="btn btn-primary" onclick="playLao()">
+                            <i class="fas fa-play me-2"></i>
+                            ထိုးရန်
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals Container -->
+    <div id="modalsContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/config.js" type="module"></script>
+    <script src="/js/dashboard.js" type="module"></script>
+
+    <script>
+        // Load modals
+        const modals = ['deposit', 'withdraw', 'transaction-history', 'betting-history', '2d', '3d', 'lao'];
+        modals.forEach(modal => {
+            fetch(`/components/${modal}-modal.html`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('modalsContainer').innerHTML += html;
+                });
+        });
+    </script>
+</body>
+</html> 

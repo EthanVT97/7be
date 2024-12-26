@@ -30,8 +30,7 @@ class AuthController {
 
             // Insert user
             $stmt = $this->conn->prepare(
-                "INSERT INTO users (username, email, phone, password, role, status, balance, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, 'user', 'active', 0.00, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                "INSERT INTO users (username, email, phone, password) VALUES (?, ?, ?, ?)"
             );
             $stmt->execute([$username, $email, $phone, $hashedPassword]);
 
@@ -70,23 +69,20 @@ class AuthController {
                 ];
             }
 
-            // Update last login
-            $stmt = $this->conn->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$user['id']]);
+            // Generate token
+            $token = JWTHelper::generateToken($user);
 
-            // Generate JWT token
-            $token = JWTHelper::generateToken([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'role' => $user['role']
-            ]);
+            // Update last login
+            $stmt = $this->conn->prepare(
+                "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
+            );
+            $stmt->execute([$user['id']]);
 
             return [
                 'success' => true,
                 'message' => 'အကောင့်ဝင်ရောက်ခြင်း အောင်မြင်ပါသည်။',
                 'token' => $token,
                 'user' => [
-                    'id' => $user['id'],
                     'username' => $user['username'],
                     'role' => $user['role']
                 ]

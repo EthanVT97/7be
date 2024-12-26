@@ -1,82 +1,81 @@
-# Build stage
-FROM composer:2.6 as composer
-
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
-
-COPY . .
-RUN composer dump-autoload --optimize
-
-# Production stage
-FROM php:8.1-apache
+FROM php:8.2-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
-    redis-tools \
-    postgresql-client \
     libzip-dev \
+    libssl-dev \
+    ssl-cert \
+    zip \
     unzip \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
+RUN docker-php-ext-install \
     pdo \
     pdo_pgsql \
-    gd \
+    pgsql \
     zip \
-    opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis opcache
+    opcache
 
-# Configure Apache
-RUN a2enmod rewrite headers http2 ssl
+# Enable Apache modules
+RUN a2enmod \
+    rewrite \
+    headers \
+    ssl \
+    proxy \
+    proxy_http \
+    http2
 
-# Set ServerName globally
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Switch to mpm_event for better performance
-RUN a2dismod mpm_prefork \
-    && a2enmod mpm_event
+# Copy Apache configuration
+COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy custom configurations
-COPY docker/php/custom.ini $PHP_INI_DIR/conf.d/
-COPY docker/000-default.conf /etc/apache2/sites-available/
-COPY docker/start.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/start.sh
+# Set working directory
+WORKDIR /var/www/html
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /var/www/html/storage/logs \
-    && mkdir -p /var/www/html/storage/cache \
-    && mkdir -p /var/www/html/storage/sessions \
-    && mkdir -p /var/www/html/public
+# Create required directories first
+RUN mkdir -p /var/log/apache2 \
+    && mkdir -p /var/run/apache2 \
+    && mkdir -p storage/logs \
+    && mkdir -p storage/framework/cache \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views
+
+# Copy composer files
+COPY composer.json composer.lock ./
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # Copy application files
-WORKDIR /var/www/html
-COPY --from=composer /app .
+COPY . .
 
-# Ensure .htaccess files are in place
-COPY public/.htaccess /var/www/html/public/.htaccess
-COPY .htaccess /var/www/html/.htaccess
+# Copy PHP configuration
+COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
-# Set proper permissions
+# Copy health check script
+COPY scripts/healthcheck.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/healthcheck.sh
+
+# Set permissions (after all files are copied and directories are created)
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/public \
-    && chmod 644 /var/www/html/public/.htaccess \
-    && chmod 644 /var/www/html/.htaccess
+    && chmod -R 755 /var/www/html \
+    && chmod -R 777 storage
 
-# Expose port
-EXPOSE 80 443
+# Environment variables
+ENV APACHE_LOG_DIR=/var/log/apache2 \
+    APACHE_RUN_DIR=/var/run/apache2 \
+    APACHE_PID_FILE=/var/run/apache2/apache2.pid \
+    APACHE_RUN_USER=www-data \
+    APACHE_RUN_GROUP=www-data
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD /usr/local/bin/healthcheck.sh
 
-# Start script
-CMD ["/usr/local/bin/start.sh"]
+# Start Apache
+CMD ["apache2-foreground"]

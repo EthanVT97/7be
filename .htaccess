@@ -1,8 +1,7 @@
-# Enable rewrite engine
 RewriteEngine On
 
-# Allow health check (update path if needed)
-RewriteRule ^health\.php$ public/health.php [L]
+# Allow health check
+RewriteRule ^health$ public/health.php [L]
 
 # Redirect all requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -10,7 +9,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php?/$1 [L]
 
 # CORS headers
-Header set Access-Control-Allow-Origin "http://localhost:3000"
+Header set Access-Control-Allow-Origin "*"
 Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
 Header set Access-Control-Allow-Headers "Content-Type, Authorization"
 
@@ -19,14 +18,14 @@ Header set X-Content-Type-Options "nosniff"
 Header set X-Frame-Options "DENY"
 Header set X-XSS-Protection "1; mode=block"
 
-# Protect config files
+# Protect sensitive files
 <FilesMatch "\.(htaccess|htpasswd|env|git|svn|DS_Store)$">
-Order Deny,Allow
-Deny from all
+    Order Deny,Allow
+    Deny from all
 </FilesMatch>
 
 # Protect sensitive directories
 <FilesMatch "^(config|includes|database)">
-Order Allow,Deny
-Deny from all
+    Order Allow,Deny
+    Deny from all
 </FilesMatch>

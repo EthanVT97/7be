@@ -1,13 +1,13 @@
 {
-    "name": "2d3d/lottery",
-    "description": "2D3D Lottery System",
+    "name": "2d3d-lottery/api",
+    "description": "2D3D Lottery API",
     "type": "project",
     "require": {
-        "php": "^8.0",
-        "vlucas/phpdotenv": "^5.5",
-        "firebase/php-jwt": "^6.9",
+        "php": ">=7.4",
         "ext-pdo": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+        "vlucas/phpdotenv": "^5.5",
+        "ext-pdo_pgsql": "*"
     },
     "autoload": {
         "psr-4": {
@@ -18,5 +18,10 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "chmod -R 777 public/"
+        ]
     }
 }

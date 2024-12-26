@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>အကောင့်ဖွင့်ရန် - 2D3D ထီ</title>
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="myanmar-text bg-light">
+    <div class="container">
+        <div class="row justify-content-center min-vh-100 align-items-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h4 class="mb-0">2D3D ထီ</h4>
+                            <p class="text-muted">အကောင့်အသစ်ဖွင့်ရန်</p>
+                        </div>
+
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label class="form-label">အမည်</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">ဖုန်းနံပါတ်</label>
+                                <input type="tel" class="form-control" name="phone" required>
+                                <small class="text-muted">ဥပမာ - 09xxxxxxxxx</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">လျှို့ဝှက်နံပါတ်</label>
+                                <input type="password" class="form-control" name="password" required>
+                                <small class="text-muted">အနည်းဆုံး စာလုံး ၆ လုံး ထည့်သွင်းပါ</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">လျှို့ဝှက်နံပါတ် အတည်ပြုရန်</label>
+                                <input type="password" class="form-control" name="confirmPassword" required>
+                            </div>
+
+                            <div class="d-grid mb-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    အကောင့်ဖွင့်မည်
+                                </button>
+                            </div>
+
+                            <div class="text-center">
+                                <p class="mb-0">
+                                    အကောင့်ရှိပြီးသားဖြစ်ပါက 
+                                    <a href="/login" class="text-decoration-none">အကောင့်ဝင်ရန်</a>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/handlers/auth.handler.js" type="module"></script>
+</body>
+</html> 

@@ -1,0 +1,58 @@
+<div class="balance-section">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">လက်ကျန်ငွေ</h6>
+                    <h3 class="mb-0" id="userBalance">0 ကျပ်</h3>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshBalance()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            
+            <div class="btn-group w-100 mt-3">
+                <button class="btn btn-primary" onclick="showDepositModal()">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    ငွေသွင်းမည်
+                </button>
+                <button class="btn btn-outline-primary" onclick="showWithdrawModal()">
+                    <i class="fas fa-minus-circle me-2"></i>
+                    ငွေထုတ်မည်
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-history me-2"></i>
+                ငွေလွှဲမှတ်တမ်းများ
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ရက်စွဲ</th>
+                            <th>အမျိုးအစား</th>
+                            <th>ပမာဏ</th>
+                            <th>အခြေအနေ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsList">
+                        <!-- JavaScript ဖြင့် ဖြည့်သွင်းမည် -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-flex justify-content-center mt-3">
+                <button class="btn btn-outline-primary btn-sm" id="loadMoreTransactions">
+                    နောက်ထပ်ကြည့်ရန်
+                </button>
+            </div>
+        </div>
+    </div>
+</div> 

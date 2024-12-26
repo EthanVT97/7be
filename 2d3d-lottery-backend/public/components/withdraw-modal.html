@@ -1,0 +1,52 @@
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-minus-circle me-2"></i>
+                    ငွေထုတ်ရန်
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="withdrawForm">
+                    <!-- User's Phone -->
+                    <div class="mb-4">
+                        <label class="form-label">ငွေထုတ်ယူမည့်ဖုန်းနံပါတ်</label>
+                        <input type="tel" class="form-control" id="userPhone" readonly>
+                        <small class="text-muted">* အကောင့်ဖွင့်စဉ်က မှတ်ပုံတင်ထားသောဖုန်းနံပါတ်သို့သာ ငွေလွှဲပေးမည်</small>
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="mb-4">
+                        <label class="form-label" for="withdrawAmount">ငွေထုတ်ယူမည့်ပမာဏ</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="withdrawAmount" min="5000" step="1000" required>
+                            <span class="input-group-text">ကျပ်</span>
+                        </div>
+                        <small class="text-muted">* အနည်းဆုံး ၅,၀၀၀ ကျပ်</small>
+                    </div>
+
+                    <!-- Password Confirmation -->
+                    <div class="mb-4">
+                        <label class="form-label" for="withdrawPassword">လျှို့ဝှက်နံပါတ်</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="withdrawPassword" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('withdrawPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">* လုံခ���ုံရေးအတွက် သင့်စကားဝှက်ဖြင့် အတည်ပြုပါ</small>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            အတည်ပြုရန်
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 

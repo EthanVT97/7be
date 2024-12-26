@@ -1,76 +1,35 @@
 services:
   - type: web
-    name: twod3d-lottery
-    env: docker
-    rootDirectory: 2d3d-lottery-frontend
-    dockerfilePath: ./Dockerfile
-    dockerContext: ./2d3d-lottery-frontend
-    healthCheckPath: /health
+    name: 2d3d-lottery-api
+    env: php
+    buildCommand: composer install --no-dev
+    startCommand: php -S 0.0.0.0:$PORT -t public
     envVars:
-      - key: NODE_VERSION
-        value: 18.17.0
-      - key: PORT
-        value: 10000
-      - key: NODE_ENV
+      - key: DB_HOST
+        fromDatabase:
+          name: db_2d3d_lottery_db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: db_2d3d_lottery_db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: db_2d3d_lottery_db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: db_2d3d_lottery_db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: db_2d3d_lottery_db
+          property: password
+      - key: APP_ENV
         value: production
-      # API Configuration
-      - key: REACT_APP_API_URL
-        value: https://twod3d-lottery-api-q68w.onrender.com
-      - key: REACT_APP_API_VERSION
-        value: v1
-      - key: REACT_APP_API_TIMEOUT
-        value: 30000
-      # Site Configuration
-      - key: REACT_APP_SITE_NAME
-        value: 2D3D Lottery
-      - key: REACT_APP_SITE_DESCRIPTION
-        value: Myanmar 2D3D Lottery Platform
-      - key: REACT_APP_SITE_URL
-        value: https://twod3d-lottery.onrender.com
-      # Security
-      - key: REACT_APP_JWT_EXPIRY
-        value: 86400
-      - key: REACT_APP_REFRESH_TOKEN_EXPIRY
-        value: 604800
-      - key: REACT_APP_ENABLE_RATE_LIMIT
-        value: true
-      - key: REACT_APP_RATE_LIMIT_REQUESTS
-        value: 60
-      - key: REACT_APP_RATE_LIMIT_WINDOW
-        value: 60000
-      # Features
-      - key: REACT_APP_ENABLE_2D
-        value: true
-      - key: REACT_APP_ENABLE_3D
-        value: true
-      - key: REACT_APP_ENABLE_NOTIFICATIONS
-        value: true
-      - key: REACT_APP_ENABLE_LIVE_RESULTS
-        value: true
-      # Localization
-      - key: REACT_APP_DEFAULT_LANGUAGE
-        value: my
-      - key: REACT_APP_SUPPORTED_LANGUAGES
-        value: my,en
-      # Cache
-      - key: REACT_APP_CACHE_DURATION
-        value: 3600
-      - key: REACT_APP_ENABLE_SERVICE_WORKER
-        value: true
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Strict-Transport-Security
-        value: max-age=31536000; includeSubDomains
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+
+databases:
+  - name: db_2d3d_lottery_db
+    databaseName: db_2d3d_lottery_db
+    user: db_2d3d_lottery_db_user
+    plan: free
