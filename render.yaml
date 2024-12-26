@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: twod3d-frontend
+    name: twod3dlottery
     env: static
     buildCommand: cd 2d3d-lottery-frontend && npm install && npm run build
     staticPublishPath: 2d3d-lottery-frontend/build
@@ -12,6 +12,10 @@ services:
         value: 30000
       - key: NODE_VERSION
         value: 18.16.0
+      - key: REACT_APP_VERSION
+        value: 1.0.0
+      - key: REACT_APP_ENV
+        value: production
     headers:
       - path: /*
         name: X-Frame-Options
@@ -22,6 +26,9 @@ services:
       - path: /*
         name: X-Content-Type-Options
         value: nosniff
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000
     routes:
       - type: rewrite
         source: /*

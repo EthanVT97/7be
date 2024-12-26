@@ -4,25 +4,25 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
-    <loc>https://twod3d-frontend.onrender.com/</loc>
+    <loc>https://twod3dlottery.onrender.com/</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://twod3d-frontend.onrender.com/login</loc>
+    <loc>https://twod3dlottery.onrender.com/login</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://twod3d-frontend.onrender.com/profile</loc>
+    <loc>https://twod3dlottery.onrender.com/profile</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://twod3d-frontend.onrender.com/bet</loc>
+    <loc>https://twod3dlottery.onrender.com/bet</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>

@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://twod3d-frontend.onrender.com/sitemap.xml 
+Sitemap: https://twod3dlottery.onrender.com/sitemap.xml 
