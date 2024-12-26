@@ -2,6 +2,7 @@ services:
   - type: web
     name: twod3d-frontend
     env: static
+    rootDirectory: .
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
     pullRequestPreviewsEnabled: true
