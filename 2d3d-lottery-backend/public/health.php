@@ -1,50 +1,49 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Database\Connection;
-
 header('Content-Type: application/json');
 
-try {
-    // Check if required environment variables are set
-    $requiredEnvVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'];
-    $missingEnvVars = [];
-    foreach ($requiredEnvVars as $var) {
-        if (!getenv($var)) {
-            $missingEnvVars[] = $var;
-        }
-    }
-
-    if (!empty($missingEnvVars)) {
-        throw new Exception('Missing required environment variables: ' . implode(', ', $missingEnvVars));
-    }
-
-    // Test database connection
-    $dbStatus = Connection::test();
-    if (!$dbStatus) {
-        throw new Exception('Database connection test failed');
-    }
-
-    // Return success response
-    http_response_code(200);
-    echo json_encode([
-        'status' => 'healthy',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'checks' => [
-            'database' => 'connected',
-            'environment' => 'configured'
+$health = [
+    'status' => 'healthy',
+    'timestamp' => date('Y-m-d H:i:s'),
+    'checks' => [
+        'database' => [
+            'status' => 'unknown'
+        ],
+        'application' => [
+            'status' => 'healthy',
+            'version' => '1.0.0'
         ]
-    ]);
+    ]
+];
+
+try {
+    // Test PostgreSQL connection
+    $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
+        getenv('DB_HOST'), 
+        getenv('DB_NAME'),
+        getenv('DB_PORT') ?? '5432'
+    );
+    
+    $pdo = new PDO($dsn, 
+        getenv('DB_USER'), 
+        getenv('DB_PASS'),
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    
+    $stmt = $pdo->query('SELECT version()');
+    $health['checks']['database'] = [
+        'status' => 'connected',
+        'version' => $stmt->fetch(PDO::FETCH_COLUMN)
+    ];
 
 } catch (Exception $e) {
-    // Log the error
-    error_log('Health check failed: ' . $e->getMessage());
-    
-    // Return error response
-    http_response_code(503);
-    echo json_encode([
-        'status' => 'unhealthy',
-        'timestamp' => date('Y-m-d H:i:s'),
+    $health['status'] = 'unhealthy';
+    $health['checks']['database'] = [
+        'status' => 'error',
         'error' => $e->getMessage()
-    ]);
-} 
+    ];
+    http_response_code(503);
+}
+
+echo json_encode($health, JSON_PRETTY_PRINT); 

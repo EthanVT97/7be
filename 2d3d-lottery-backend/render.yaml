@@ -2,7 +2,10 @@ services:
   - type: web
     name: twod3d-lottery-api
     env: php
-    buildCommand: composer install
+    buildCommand: |
+      chmod +x docker/start.sh
+      chmod +x scripts/deploy-checklist.sh
+      composer install --no-dev --optimize-autoloader
     startCommand: heroku-php-apache2 public/
     healthCheckPath: /health.php
     envVars:
@@ -26,6 +29,10 @@ services:
         generateValue: true
       - key: CORS_ORIGIN
         value: https://twod3d-lottery.onrender.com
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
 
 databases:
   - name: twod3d-lottery-db

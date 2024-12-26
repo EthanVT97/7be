@@ -25,10 +25,11 @@ try {
         // Read migration file
         $sql = file_get_contents($migration);
         
-        // Convert SQLite syntax to PostgreSQL
-        $sql = str_replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY', $sql);
+        // Convert MySQL syntax to PostgreSQL
+        $sql = str_replace('AUTO_INCREMENT', 'SERIAL', $sql);
         $sql = str_replace('DATETIME', 'TIMESTAMP', $sql);
-        $sql = str_replace('TEXT', 'VARCHAR(255)', $sql);
+        $sql = str_replace('DECIMAL(10,2)', 'NUMERIC(10,2)', $sql);
+        $sql = str_replace('INT ', 'INTEGER ', $sql);
         
         // Execute migration
         $pdo->exec($sql);

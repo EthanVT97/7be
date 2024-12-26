@@ -1,12 +1,17 @@
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Dependencies
 /vendor
+/node_modules
 
 # IDE files
-.vscode/
 .idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
 
 # Logs
 /logs/*
@@ -14,4 +19,16 @@
 
 # Cache
 /cache/*
-!cache/.gitkeep 
+!cache/.gitkeep
+
+# Uploaded files
+/public/uploads/*
+!public/uploads/.gitkeep
+
+# Build files
+/dist
+/build
+
+# OS files
+.DS_Store
+Thumbs.db 

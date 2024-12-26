@@ -1,33 +1,33 @@
 import React from 'react';
 import styled from 'styled-components';
 import Header from './Header';
-
-const Main = styled.main`
-  margin-top: 80px; // Header height + spacing
-  min-height: calc(100vh - 80px);
-  padding: ${({ theme }) => theme.spacing.lg};
-`;
-
-const Container = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 ${({ theme }) => theme.spacing.md};
-`;
+import Footer from './Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+const LayoutContainer = styled.div`
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+`;
+
+const Main = styled.main`
+  flex: 1;
+  width: 100%;
+  max-width: ${({ theme }) => theme.breakpoints.xl};
+  margin: 0 auto;
+  padding: ${({ theme }) => theme.space.md};
+`;
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <>
+    <LayoutContainer>
       <Header />
-      <Main>
-        <Container>
-          {children}
-        </Container>
-      </Main>
-    </>
+      <Main>{children}</Main>
+      <Footer />
+    </LayoutContainer>
   );
 };
 

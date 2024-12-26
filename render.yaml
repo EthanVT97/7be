@@ -29,28 +29,30 @@ services:
       composer require predis/predis
       apt-get update && apt-get install -y libpq-dev
       docker-php-ext-install pdo pdo_pgsql
-      composer install
+      composer install --no-dev --optimize-autoloader
     startCommand: heroku-php-apache2 public/
     healthCheckPath: /health.php
     envVars:
-      - key: POSTGRES_HOST
+      - key: DB_HOST
         fromDatabase:
           name: 2d3d-lottery-db
           property: host
-      - key: POSTGRES_DB
+      - key: DB_NAME
         fromDatabase:
           name: 2d3d-lottery-db
           property: database
-      - key: POSTGRES_USER
+      - key: DB_USER
         fromDatabase:
           name: 2d3d-lottery-db
           property: user
-      - key: POSTGRES_PASSWORD
+      - key: DB_PASS
         fromDatabase:
           name: 2d3d-lottery-db
           property: password
-      - key: POSTGRES_PORT
-        value: "5432"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://twod3d-lottery.onrender.com
       - key: REDIS_URL
         value: "redis://localhost:6379"
 

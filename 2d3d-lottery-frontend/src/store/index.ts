@@ -1,16 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
+import adminReducer from './slices/adminSlice';
 import authReducer from './slices/authSlice';
-import walletReducer from './slices/walletSlice';
-import betsReducer from './slices/betsSlice';
-import transactionsReducer from './slices/transactionsSlice';
+import lotteryReducer from './slices/lotterySlice';
 
 export const store = configureStore({
   reducer: {
+    admin: adminReducer,
     auth: authReducer,
-    wallet: walletReducer,
-    bets: betsReducer,
-    transactions: transactionsReducer,
+    lottery: lotteryReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -1,44 +1,68 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../../services/api';
 
-interface AdminSettings {
-  minBetAmount: number;
-  minDepositAmount: number;
-  maxWithdrawAmount: number;
-  twoDCloseTime: number;
-  threeDCloseTime: number;
-}
-
 interface AdminState {
-  settings: AdminSettings;
+  stats: any;
+  settings: any;
+  bets: any[];
+  transactions: any[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: AdminState = {
-  settings: {
-    minBetAmount: 100,
-    minDepositAmount: 1000,
-    maxWithdrawAmount: 1000000,
-    twoDCloseTime: 30,
-    threeDCloseTime: 60,
-  },
+  stats: null,
+  settings: null,
+  bets: [],
+  transactions: [],
   loading: false,
   error: null,
 };
 
+export const fetchAdminStats = createAsyncThunk(
+  'admin/fetchStats',
+  async () => {
+    const response = await api.get('/admin/stats');
+    return response.data;
+  }
+);
+
 export const fetchSettings = createAsyncThunk(
   'admin/fetchSettings',
   async () => {
-    const response = await api.get('/api/admin/settings');
+    const response = await api.get('/admin/settings');
     return response.data;
   }
 );
 
 export const updateSettings = createAsyncThunk(
   'admin/updateSettings',
-  async (settings: AdminSettings) => {
-    const response = await api.put('/api/admin/settings', settings);
+  async (settings: any) => {
+    const response = await api.put('/admin/settings', settings);
+    return response.data;
+  }
+);
+
+export const fetchBets = createAsyncThunk(
+  'admin/fetchBets',
+  async () => {
+    const response = await api.get('/admin/bets');
+    return response.data;
+  }
+);
+
+export const updateBetStatus = createAsyncThunk(
+  'admin/updateBetStatus',
+  async ({ betId, status }: { betId: string; status: string }) => {
+    const response = await api.put(`/admin/bets/${betId}`, { status });
+    return response.data;
+  }
+);
+
+export const fetchTransactions = createAsyncThunk(
+  'admin/fetchTransactions',
+  async () => {
+    const response = await api.get('/admin/transactions');
     return response.data;
   }
 );
@@ -49,31 +73,34 @@ const adminSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch settings
-      .addCase(fetchSettings.pending, (state) => {
+      .addCase(fetchAdminStats.pending, (state) => {
         state.loading = true;
-        state.error = null;
+      })
+      .addCase(fetchAdminStats.fulfilled, (state, action) => {
+        state.loading = false;
+        state.stats = action.payload;
+      })
+      .addCase(fetchAdminStats.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch stats';
       })
       .addCase(fetchSettings.fulfilled, (state, action) => {
-        state.loading = false;
         state.settings = action.payload;
-      })
-      .addCase(fetchSettings.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'ဆက်တင်များ ရယူရာတွင် အမှားရှိနေပါသည်';
-      })
-      // Update settings
-      .addCase(updateSettings.pending, (state) => {
-        state.loading = true;
-        state.error = null;
       })
       .addCase(updateSettings.fulfilled, (state, action) => {
-        state.loading = false;
         state.settings = action.payload;
       })
-      .addCase(updateSettings.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'ဆက်တင်များ ပြောင်းလဲရာတွင် အမှားရှိနေပါသည်';
+      .addCase(fetchBets.fulfilled, (state, action) => {
+        state.bets = action.payload;
+      })
+      .addCase(updateBetStatus.fulfilled, (state, action) => {
+        const index = state.bets.findIndex(bet => bet.id === action.payload.id);
+        if (index !== -1) {
+          state.bets[index] = action.payload;
+        }
+      })
+      .addCase(fetchTransactions.fulfilled, (state, action) => {
+        state.transactions = action.payload;
       });
   },
 });

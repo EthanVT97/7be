@@ -11,24 +11,24 @@ $health = [
             'status' => 'unknown',
             'error' => null
         ],
-        'redis' => [
-            'status' => 'unknown',
-            'error' => null
+        'application' => [
+            'status' => 'healthy',
+            'version' => '1.0.0'
         ]
     ]
 ];
 
 try {
-    // Test PostgreSQL
+    // Test PostgreSQL - Render uses PostgreSQL
     $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
-        getenv('POSTGRES_HOST'), 
-        getenv('POSTGRES_DB'),
-        getenv('POSTGRES_PORT') ?? '5432'
+        getenv('DB_HOST'), 
+        getenv('DB_NAME'),
+        getenv('DB_PORT') ?? '5432'
     );
     
     $pdo = new PDO($dsn, 
-        getenv('POSTGRES_USER'), 
-        getenv('POSTGRES_PASSWORD'),
+        getenv('DB_USER'), 
+        getenv('DB_PASS'),
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
@@ -39,25 +39,9 @@ try {
         'version' => $version
     ];
 
-    // Test Redis if available
-    if (class_exists('Predis\Client')) {
-        $redis = new Predis\Client(getenv('REDIS_URL'));
-        $redis->ping();
-        $health['checks']['redis'] = [
-            'status' => 'connected'
-        ];
-    }
-
-} catch (PDOException $e) {
-    $health['status'] = 'unhealthy';
-    $health['checks']['database'] = [
-        'status' => 'error',
-        'error' => $e->getMessage()
-    ];
-    http_response_code(503);
 } catch (Exception $e) {
     $health['status'] = 'unhealthy';
-    $health['checks']['redis'] = [
+    $health['checks']['database'] = [
         'status' => 'error',
         'error' => $e->getMessage()
     ];
