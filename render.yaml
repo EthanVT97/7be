@@ -1,41 +1,29 @@
 services:
   - type: web
     name: 2d3d-lottery-api
-    env: docker
-    region: singapore
-    plan: free
-    healthCheckPath: /health
+    env: php
+    buildCommand: composer install --no-dev
+    startCommand: php -S 0.0.0.0:$PORT -t public
     envVars:
       - key: DB_HOST
-        fromDatabase:
-          name: db_2d3d_lottery_db
-          property: host
+        value: dpg-ctm70o9opnds73fdciig-a.singapore-postgres.render.com
       - key: DB_PORT
-        fromDatabase:
-          name: db_2d3d_lottery_db
-          property: port
+        value: 5432
       - key: DB_NAME
-        fromDatabase:
-          name: db_2d3d_lottery_db
-          property: database
+        value: db_2d3d_lottery_db
       - key: DB_USER
-        fromDatabase:
-          name: db_2d3d_lottery_db
-          property: user
+        value: db_2d3d_lottery_db_user
       - key: DB_PASS
-        fromDatabase:
-          name: db_2d3d_lottery_db
-          property: password
-      - key: DATABASE_URL
-        fromDatabase:
-          name: db_2d3d_lottery_db
-          property: connectionString
+        value: ZcV5s0MAJrFxPyYfQFr7lJFADwxFAn6b
       - key: APP_ENV
         value: production
+      - key: SITE_URL
+        value: https://twod3d-lottery.onrender.com
+      - key: API_URL
+        value: https://twod3d-lottery-api-q68w.onrender.com
 
 databases:
   - name: db_2d3d_lottery_db
     databaseName: db_2d3d_lottery_db
     user: db_2d3d_lottery_db_user
     plan: free
-    region: singapore
