@@ -1,119 +1,128 @@
 import React, { useEffect } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
+
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'warning' | 'info';
+  type?: ToastType;
   duration?: number;
   onClose: () => void;
 }
 
 const slideIn = keyframes`
   from {
-    transform: translateX(100%);
+    transform: translateY(100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 `;
 
 const slideOut = keyframes`
   from {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
   to {
-    transform: translateX(100%);
+    transform: translateY(100%);
     opacity: 0;
   }
 `;
 
-const ToastContainer = styled.div<{ type: string; isClosing?: boolean }>`
+const ToastContainer = styled.div<{ type: ToastType; isClosing?: boolean }>`
   position: fixed;
-  top: ${({ theme }) => theme.space.lg};
-  right: ${({ theme }) => theme.space.lg};
-  padding: ${({ theme }) => theme.space.md} ${({ theme }) => theme.space.lg};
-  border-radius: ${({ theme }) => theme.radii.md};
-  background-color: ${({ theme, type }) => {
-    switch (type) {
+  bottom: 1rem;
+  right: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+  background-color: ${props => {
+    switch (props.type) {
       case 'success':
-        return theme.colors.success;
+        return '#d4edda';
       case 'error':
-        return theme.colors.danger;
+        return '#f8d7da';
       case 'warning':
-        return theme.colors.warning;
+        return '#fff3cd';
       default:
-        return theme.colors.info;
+        return '#d1ecf1';
     }
   }};
-  color: white;
-  box-shadow: ${({ theme }) => theme.shadows.md};
+  color: ${props => {
+    switch (props.type) {
+      case 'success':
+        return '#155724';
+      case 'error':
+        return '#721c24';
+      case 'warning':
+        return '#856404';
+      default:
+        return '#0c5460';
+    }
+  }};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.space.sm};
-  z-index: 1100;
-  animation: ${({ isClosing }) => isClosing ? slideOut : slideIn} 0.3s ease-in-out;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  z-index: 2000;
+  animation: ${props =>
+    props.isClosing
+      ? css`${slideOut} 0.3s ease-in-out forwards`
+      : css`${slideIn} 0.3s ease-in-out`};
 `;
 
 const Icon = styled.span`
-  font-size: ${({ theme }) => theme.fontSizes.xl};
-`;
-
-const Message = styled.p`
-  margin: 0;
-  font-size: ${({ theme }) => theme.fontSizes.md};
+  font-size: 1.25rem;
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
-  color: white;
-  font-size: ${({ theme }) => theme.fontSizes.lg};
+  color: inherit;
   cursor: pointer;
   padding: 0;
-  margin-left: ${({ theme }) => theme.space.md};
-  opacity: 0.8;
-  transition: opacity 0.2s;
-
+  margin-left: 1rem;
+  opacity: 0.7;
+  
   &:hover {
     opacity: 1;
   }
 `;
 
-const Toast: React.FC<ToastProps> = ({
+const getIcon = (type: ToastType) => {
+  switch (type) {
+    case 'success':
+      return '✓';
+    case 'error':
+      return '✕';
+    case 'warning':
+      return '⚠';
+    default:
+      return 'ℹ';
+  }
+};
+
+export const Toast: React.FC<ToastProps> = ({
   message,
   type = 'info',
   duration = 3000,
   onClose
 }) => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
-
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return '✅';
-      case 'error':
-        return '❌';
-      case 'warning':
-        return '⚠️';
-      default:
-        return 'ℹ️';
-    }
-  };
-
   return (
     <ToastContainer type={type}>
-      <Icon>{getIcon()}</Icon>
-      <Message>{message}</Message>
-      <CloseButton onClick={onClose}>&times;</CloseButton>
+      <Icon>{getIcon(type)}</Icon>
+      {message}
+      <CloseButton onClick={onClose} aria-label="Close notification">
+        ×
+      </CloseButton>
     </ToastContainer>
   );
 };

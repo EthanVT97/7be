@@ -1,249 +1,303 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
-import { fetchTransactions, updateTransactionStatus } from '../../store/slices/adminSlice';
-import { Button } from '../common/Button';
+import { getTransactions, updateTransactionStatus } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { useConfirm } from '../../hooks/useConfirm';
 
-const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize['3xl']};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-`;
-
-const Filters = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.md};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-`;
-
-const Select = styled.select`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-    outline: none;
-  }
-`;
-
-const DateInput = styled.input`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-    outline: none;
-  }
-`;
+interface Transaction {
+  id: string;
+  userId: string;
+  username: string;
+  type: 'deposit' | 'withdraw';
+  amount: number;
+  status: 'pending' | 'completed' | 'rejected';
+  accountInfo?: string;
+  transactionId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const Table = styled.table`
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: ${({ theme }) => theme.borderRadius.md};
+  background: white;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Th = styled.th`
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
-  padding: ${({ theme }) => theme.spacing.md};
+  background: #f8f9fa;
+  padding: 1rem;
   text-align: left;
-  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
 `;
 
 const Td = styled.td`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  color: #212529;
 `;
 
-const Status = styled.span<{ status: string }>`
+const Button = styled.button<{ variant?: 'success' | 'danger' }>`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: ${props => 
+    props.variant === 'success' ? '#28a745' : 
+    props.variant === 'danger' ? '#dc3545' : 
+    '#007bff'};
+  color: white;
+  transition: opacity 0.2s;
+  margin-right: 0.5rem;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const Status = styled.span<{ status: 'pending' | 'completed' | 'rejected' }>`
   display: inline-block;
-  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  border-radius: ${({ theme }) => theme.borderRadius.sm};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  background: ${({ theme, status }) => {
-    switch (status) {
-      case 'pending':
-        return theme.colors.warning + '20';
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background-color: ${props => {
+    switch (props.status) {
       case 'completed':
-        return theme.colors.success + '20';
+        return '#d4edda';
       case 'rejected':
-        return theme.colors.error + '20';
+        return '#f8d7da';
       default:
-        return theme.colors.text.secondary + '20';
+        return '#fff3cd';
     }
   }};
-  color: ${({ theme, status }) => {
-    switch (status) {
-      case 'pending':
-        return theme.colors.warning;
+  color: ${props => {
+    switch (props.status) {
       case 'completed':
-        return theme.colors.success;
+        return '#155724';
       case 'rejected':
-        return theme.colors.error;
+        return '#721c24';
       default:
-        return theme.colors.text.secondary;
+        return '#856404';
     }
   }};
 `;
 
-const ActionButton = styled(Button)`
-  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-`;
-
-const Pagination = styled.div`
+const FilterContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
-  gap: ${({ theme }) => theme.spacing.sm};
-  margin-top: ${({ theme }) => theme.spacing.xl};
+  gap: 1rem;
+  margin-bottom: 1rem;
 `;
 
-interface Transaction {
-  id: string;
-  username: string;
-  type: 'deposit' | 'withdraw';
-  amount: number;
-  status: 'pending' | 'completed' | 'rejected';
-  createdAt: string;
-}
+const Select = styled.select`
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  color: #495057;
+
+  &:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
+`;
+
+const SearchInput = styled.input`
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  width: 300px;
+
+  &:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
+`;
+
+const NoData = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+`;
+
+const AccountInfo = styled.div`
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+`;
 
 const TransactionManagement: React.FC = () => {
-  const [filters, setFilters] = useState({
-    type: 'all',
-    status: 'all',
-    date: '',
-  });
-  const [page, setPage] = useState(1);
-  const dispatch = useDispatch();
-  const { transactions, loading } = useSelector((state: RootState) => state.admin);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'deposit' | 'withdraw'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'rejected'>('all');
+  
+  const toast = useToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
-    dispatch(fetchTransactions({ page, ...filters }));
-  }, [dispatch, page, filters]);
+    fetchTransactions();
+  }, []);
 
-  const handleStatusChange = async (transactionId: string, status: string) => {
+  const fetchTransactions = async () => {
     try {
-      await dispatch(updateTransactionStatus({ transactionId, status })).unwrap();
-      dispatch(fetchTransactions({ page, ...filters }));
-    } catch (err) {
-      console.error('Failed to update transaction status:', err);
+      const response = await getTransactions();
+      setTransactions(response.data);
+    } catch (error) {
+      toast.showToast('Failed to fetch transactions', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleStatusChange = async (transactionId: string, newStatus: 'completed' | 'rejected') => {
+    const confirmed = await confirm({
+      title: `${newStatus === 'completed' ? 'Approve' : 'Reject'} Transaction`,
+      message: `Are you sure you want to ${newStatus === 'completed' ? 'approve' : 'reject'} this transaction?`,
+      confirmText: 'Yes',
+      cancelText: 'No',
+      type: newStatus === 'completed' ? 'warning' : 'danger'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await updateTransactionStatus(transactionId, newStatus);
+      setTransactions(transactions.map(transaction => 
+        transaction.id === transactionId ? { ...transaction, status: newStatus } : transaction
+      ));
+      toast.showToast('Transaction status updated successfully', 'success');
+    } catch (error) {
+      toast.showToast('Failed to update transaction status', 'error');
+    }
+  };
+
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchesSearch = 
+      transaction.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.transactionId?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div>
-      <Title>ငွေသွင်း/ထုတ် မှတ်တမ်းများ စီမံခန့်ခွဲခြင်း</Title>
-
-      <Filters>
-        <Select
-          value={filters.type}
-          onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-        >
-          <option value="all">အားလုံး</option>
-          <option value="deposit">ငွေသွင်း</option>
-          <option value="withdraw">ငွေထုတ်</option>
-        </Select>
-
-        <Select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-        >
-          <option value="all">အားလုံး</option>
-          <option value="pending">စောင့်ဆိုင်းဆဲ</option>
-          <option value="completed">ပြီးဆုံး</option>
-          <option value="rejected">ငြင်းပယ်</option>
-        </Select>
-
-        <DateInput
-          type="date"
-          value={filters.date}
-          onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+      <FilterContainer>
+        <SearchInput
+          type="text"
+          placeholder="Search by username or transaction ID..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </Filters>
+        <Select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as 'all' | 'deposit' | 'withdraw')}
+        >
+          <option value="all">All Types</option>
+          <option value="deposit">Deposits</option>
+          <option value="withdraw">Withdrawals</option>
+        </Select>
+        <Select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'completed' | 'rejected')}
+        >
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="rejected">Rejected</option>
+        </Select>
+      </FilterContainer>
 
       <Table>
         <thead>
           <tr>
-            <Th>အသုံးပြုသူ</Th>
-            <Th>အမျိုးအစား</Th>
-            <Th>ပမာဏ</Th>
-            <Th>အခြေအနေ</Th>
-            <Th>ရက်စွဲ</Th>
-            <Th>လုပ်ဆောင်ချက်</Th>
+            <Th>Username</Th>
+            <Th>Type</Th>
+            <Th>Amount</Th>
+            <Th>Status</Th>
+            <Th>Details</Th>
+            <Th>Created At</Th>
+            <Th>Updated At</Th>
+            <Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
-          {transactions.map((transaction: Transaction) => (
-            <tr key={transaction.id}>
-              <Td>{transaction.username}</Td>
-              <Td>{transaction.type === 'deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်'}</Td>
-              <Td>{transaction.amount.toLocaleString()}</Td>
-              <Td>
-                <Status status={transaction.status}>
-                  {transaction.status === 'pending' && 'စောင့်ဆိုင်းဆဲ'}
-                  {transaction.status === 'completed' && 'ပြီးဆုံး'}
-                  {transaction.status === 'rejected' && 'ငြင်းပယ်'}
-                </Status>
-              </Td>
-              <Td>{new Date(transaction.createdAt).toLocaleDateString()}</Td>
-              <Td>
-                {transaction.status === 'pending' && (
-                  <>
-                    <ActionButton
-                      variant="success"
-                      onClick={() => handleStatusChange(transaction.id, 'completed')}
-                      disabled={loading}
-                    >
-                      အတည်ပြု
-                    </ActionButton>
-                    <ActionButton
-                      variant="danger"
-                      onClick={() => handleStatusChange(transaction.id, 'rejected')}
-                      disabled={loading}
-                      style={{ marginLeft: '8px' }}
-                    >
-                      ငြင်းပယ်
-                    </ActionButton>
-                  </>
-                )}
+          {filteredTransactions.length > 0 ? (
+            filteredTransactions.map(transaction => (
+              <tr key={transaction.id}>
+                <Td>{transaction.username}</Td>
+                <Td>{transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}</Td>
+                <Td>{transaction.amount.toLocaleString()}</Td>
+                <Td>
+                  <Status status={transaction.status}>
+                    {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                  </Status>
+                </Td>
+                <Td>
+                  {transaction.type === 'deposit' && transaction.transactionId && (
+                    <>Transaction ID: {transaction.transactionId}</>
+                  )}
+                  {transaction.type === 'withdraw' && transaction.accountInfo && (
+                    <AccountInfo>
+                      {JSON.parse(transaction.accountInfo).bankName} - {JSON.parse(transaction.accountInfo).accountNumber}
+                    </AccountInfo>
+                  )}
+                </Td>
+                <Td>{new Date(transaction.createdAt).toLocaleString()}</Td>
+                <Td>{new Date(transaction.updatedAt).toLocaleString()}</Td>
+                <Td>
+                  {transaction.status === 'pending' && (
+                    <>
+                      <Button
+                        variant="success"
+                        onClick={() => handleStatusChange(transaction.id, 'completed')}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleStatusChange(transaction.id, 'rejected')}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </Td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <Td colSpan={8}>
+                <NoData>
+                  {searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
+                    ? 'No transactions found matching your filters'
+                    : 'No transactions found'}
+                </NoData>
               </Td>
             </tr>
-          ))}
+          )}
         </tbody>
       </Table>
-
-      <Pagination>
-        <Button
-          variant="outline"
-          onClick={() => setPage(p => Math.max(1, p - 1))}
-          disabled={page === 1 || loading}
-        >
-          ရှေ့
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setPage(p => p + 1)}
-          disabled={transactions.length < 10 || loading}
-        >
-          နောက်
-        </Button>
-      </Pagination>
     </div>
   );
 };

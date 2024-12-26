@@ -3,6 +3,11 @@ services:
     name: twod3d-lottery-api
     env: php
     buildCommand: |
+      apt-get update && apt-get install -y \
+        libpq-dev \
+        redis-server
+      pecl install redis
+      docker-php-ext-enable redis
       chmod +x docker/start.sh
       chmod +x scripts/deploy-checklist.sh
       composer install --no-dev --optimize-autoloader
@@ -25,14 +30,26 @@ services:
         fromDatabase:
           name: twod3d-lottery-db
           property: password
+      - key: DB_SSL_MODE
+        value: require
       - key: JWT_SECRET
         generateValue: true
+      - key: REDIS_URL
+        fromService:
+          name: twod3d-lottery-redis
+          type: redis
+          property: connectionString
       - key: CORS_ORIGIN
-        value: https://twod3d-lottery.onrender.com
+        value: ${CORS_ORIGIN:-https://twod3d-lottery.onrender.com}
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
+
+  - type: redis
+    name: twod3d-lottery-redis
+    ipAllowList: []
+    plan: free
 
 databases:
   - name: twod3d-lottery-db

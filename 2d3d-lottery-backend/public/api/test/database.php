@@ -1,31 +1,48 @@
 <?php
-require_once __DIR__ . '/../../../../vendor/autoload.php';
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
 header('Content-Type: application/json');
 
 try {
-    $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
-        getenv('DB_HOST'), 
-        getenv('DB_NAME'),
-        getenv('DB_PORT') ?? '5432'
-    );
-    
-    $pdo = new PDO($dsn, 
-        getenv('DB_USER'), 
-        getenv('DB_PASS'),
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+    $host = getenv('DB_HOST');
+    $dbname = getenv('DB_NAME');
+    $user = getenv('DB_USER');
+    $pass = getenv('DB_PASS');
+    $port = getenv('DB_PORT') ?: '5432';
 
+    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=require";
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 5,
+        PDO::ATTR_PERSISTENT => true
+    ];
+
+    $pdo = new PDO($dsn, $user, $pass, $options);
+    $stmt = $pdo->query('SELECT version()');
+    
     echo json_encode([
         'status' => 'success',
-        'message' => 'Database connection successful'
+        'message' => 'Database connection successful',
+        'version' => $stmt->fetchColumn(),
+        'config' => [
+            'host' => $host,
+            'database' => $dbname,
+            'port' => $port,
+            'ssl_mode' => 'require'
+        ]
     ]);
-
+    exit(0);
 } catch (Exception $e) {
-    http_response_code(500);
     echo json_encode([
         'status' => 'error',
         'message' => 'Database connection failed',
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
+        'config' => [
+            'host' => $host,
+            'database' => $dbname,
+            'port' => $port,
+            'ssl_mode' => 'require'
+        ]
     ]);
+    exit(1);
 } 

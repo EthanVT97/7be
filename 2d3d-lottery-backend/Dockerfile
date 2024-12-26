@@ -3,7 +3,7 @@ FROM composer:2.6 as composer
 
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 
 COPY . .
 RUN composer dump-autoload --optimize
@@ -14,12 +14,16 @@ FROM php:8.1-apache
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
+    redis \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install \
     pdo \
-    pdo_pgsql
+    pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # Configure Apache
 RUN a2enmod rewrite headers

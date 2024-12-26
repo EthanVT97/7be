@@ -1,178 +1,208 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
-import { fetchUsers, updateUserStatus } from '../../store/slices/adminSlice';
-import { Button } from '../common/Button';
+import { getUsers, updateUserStatus } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { useConfirm } from '../../hooks/useConfirm';
 
-const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize['3xl']};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-`;
-
-const SearchBar = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.md};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-`;
-
-const SearchInput = styled.input`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  width: 300px;
-  
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-    outline: none;
-  }
-`;
+interface User {
+  id: string;
+  username: string;
+  phoneNumber: string;
+  balance: number;
+  status: 'active' | 'suspended';
+  createdAt: string;
+  lastLogin: string;
+}
 
 const Table = styled.table`
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: ${({ theme }) => theme.borderRadius.md};
+  background: white;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Th = styled.th`
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
-  padding: ${({ theme }) => theme.spacing.md};
+  background: #f8f9fa;
+  padding: 1rem;
   text-align: left;
-  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
 `;
 
 const Td = styled.td`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  color: #212529;
 `;
 
-const Status = styled.span<{ active: boolean }>`
+const Button = styled.button<{ variant?: 'danger' | 'success' }>`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: ${props => 
+    props.variant === 'danger' ? '#dc3545' : 
+    props.variant === 'success' ? '#28a745' : 
+    '#007bff'};
+  color: white;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const Status = styled.span<{ status: 'active' | 'suspended' }>`
   display: inline-block;
-  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  border-radius: ${({ theme }) => theme.borderRadius.sm};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  background: ${({ theme, active }) => active ? theme.colors.success : theme.colors.error}20;
-  color: ${({ theme, active }) => active ? theme.colors.success : theme.colors.error};
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background-color: ${props => props.status === 'active' ? '#d4edda' : '#f8d7da'};
+  color: ${props => props.status === 'active' ? '#155724' : '#721c24'};
 `;
 
-const ActionButton = styled(Button)`
-  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+const SearchInput = styled.input`
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  width: 300px;
+
+  &:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
 `;
 
-const Pagination = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: ${({ theme }) => theme.spacing.sm};
-  margin-top: ${({ theme }) => theme.spacing.xl};
+const NoData = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
 `;
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  balance: number;
-  isActive: boolean;
-  createdAt: string;
-}
 
 const UserManagement: React.FC = () => {
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const dispatch = useDispatch();
-  const { users, loading } = useSelector((state: RootState) => state.admin);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const toast = useToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
-    dispatch(fetchUsers({ page, search }));
-  }, [dispatch, page, search]);
+    fetchUsers();
+  }, []);
 
-  const handleStatusChange = async (userId: string, isActive: boolean) => {
+  const fetchUsers = async () => {
     try {
-      await dispatch(updateUserStatus({ userId, isActive: !isActive })).unwrap();
-      dispatch(fetchUsers({ page, search }));
-    } catch (err) {
-      console.error('Failed to update user status:', err);
+      const response = await getUsers();
+      setUsers(response.data);
+    } catch (error) {
+      toast.showToast('Failed to fetch users', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleStatusChange = async (userId: string, currentStatus: 'active' | 'suspended') => {
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    const action = currentStatus === 'active' ? 'suspend' : 'activate';
+
+    const confirmed = await confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+      message: `Are you sure you want to ${action} this user?`,
+      confirmText: 'Yes',
+      cancelText: 'No',
+      type: currentStatus === 'active' ? 'danger' : 'warning'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await updateUserStatus(userId, newStatus);
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, status: newStatus } : user
+      ));
+      toast.showToast(`User ${action}d successfully`, 'success');
+    } catch (error) {
+      toast.showToast(`Failed to ${action} user`, 'error');
+    }
+  };
+
+  const filteredUsers = users.filter(user => 
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.phoneNumber.includes(searchTerm)
+  );
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div>
-      <Title>အသုံးပြုသူများ စီမံခန့်ခွဲခြင်း</Title>
-
-      <SearchBar>
-        <SearchInput
-          type="text"
-          placeholder="အသုံးပြုသူအမည် သို့မဟုတ် အီးမေးလ်ဖြင့် ရှာရန်..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </SearchBar>
+      <SearchInput
+        type="text"
+        placeholder="Search by username or phone number..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
 
       <Table>
         <thead>
           <tr>
-            <Th>အသုံးပြုသူအမည်</Th>
-            <Th>အီးမေးလ်</Th>
-            <Th>လက်ကျန်ငွေ</Th>
-            <Th>အခြေအနေ</Th>
-            <Th>လာရင်းဖွင့်သည့်ရက်</Th>
-            <Th>လုပ်ဆောင်ချက်</Th>
+            <Th>Username</Th>
+            <Th>Phone Number</Th>
+            <Th>Balance</Th>
+            <Th>Status</Th>
+            <Th>Joined Date</Th>
+            <Th>Last Login</Th>
+            <Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
-          {users.map((user: User) => (
-            <tr key={user.id}>
-              <Td>{user.username}</Td>
-              <Td>{user.email}</Td>
-              <Td>{user.balance.toLocaleString()}</Td>
-              <Td>
-                <Status active={user.isActive}>
-                  {user.isActive ? 'အသုံးပြုနိုင်' : 'ပိတ်ထား'}
-                </Status>
-              </Td>
-              <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
-              <Td>
-                <ActionButton
-                  variant={user.isActive ? 'danger' : 'success'}
-                  onClick={() => handleStatusChange(user.id, user.isActive)}
-                  disabled={loading}
-                >
-                  {user.isActive ? 'ပိတ်မည်' : 'ဖွင့်မည်'}
-                </ActionButton>
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map(user => (
+              <tr key={user.id}>
+                <Td>{user.username}</Td>
+                <Td>{user.phoneNumber}</Td>
+                <Td>{user.balance.toLocaleString()}</Td>
+                <Td>
+                  <Status status={user.status}>
+                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                  </Status>
+                </Td>
+                <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
+                <Td>{new Date(user.lastLogin).toLocaleDateString()}</Td>
+                <Td>
+                  <Button
+                    variant={user.status === 'active' ? 'danger' : 'success'}
+                    onClick={() => handleStatusChange(user.id, user.status)}
+                  >
+                    {user.status === 'active' ? 'Suspend' : 'Activate'}
+                  </Button>
+                </Td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <Td colSpan={7}>
+                <NoData>
+                  {searchTerm ? 'No users found matching your search' : 'No users found'}
+                </NoData>
               </Td>
             </tr>
-          ))}
+          )}
         </tbody>
       </Table>
-
-      <Pagination>
-        <Button
-          variant="outline"
-          onClick={() => setPage(p => Math.max(1, p - 1))}
-          disabled={page === 1 || loading}
-        >
-          ရှေ့
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setPage(p => p + 1)}
-          disabled={users.length < 10 || loading}
-        >
-          နောက်
-        </Button>
-      </Pagination>
     </div>
   );
 };

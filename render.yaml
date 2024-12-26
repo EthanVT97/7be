@@ -1,25 +1,49 @@
 services:
-  # Static frontend
+  # Frontend Service
   - type: web
-    name: 2d3d-lottery
+    name: 2d3d-lottery-frontend
     env: static
-    buildCommand: npm install
-    staticPublishPath: ./public
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
     pullRequestPreviewsEnabled: true
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REACT_APP_API_URL
+        fromService:
+          name: 2d3d-lottery-backend
+          type: web
+          property: url
+      - key: REACT_APP_WS_URL
+        fromService:
+          name: 2d3d-lottery-backend
+          type: web
+          property: url
+          envVarKey: WS_URL
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     headers:
       - path: /*
         name: Cache-Control
-        value: public, max-age=31536000
+        value: no-cache
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
       - path: /*
         name: X-Frame-Options
         value: SAMEORIGIN
       - path: /*
         name: X-Content-Type-Options
         value: nosniff
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    healthCheckPath: /health
+    domains:
+      - 2d3d-lottery.onrender.com
 
   # API backend
   - type: web
