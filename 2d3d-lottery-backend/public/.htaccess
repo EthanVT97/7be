@@ -1,47 +1,31 @@
+# Enable rewrite engine
 RewriteEngine On
 
-# Handle Authorization header
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Redirect trailing slashes
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} (.+)/$
-RewriteRule ^ %1 [L,R=301]
+# Allow direct access to health check
+RewriteRule ^health\.php$ - [L]
 
-# Health check route
-RewriteRule ^health$ health.php [L,NC]
-RewriteRule ^health/$ health.php [L,NC]
+# API Endpoints
+RewriteRule ^api/auth/(login|register|refresh|logout)$ api/auth/index.php?action=$1 [QSA,L]
+RewriteRule ^api/status/?$ api/status/index.php [L]
+RewriteRule ^api/health/?$ health.php [L]
 
-# API routes
-RewriteRule ^api/(.*)$ api/$1 [QSA,L]
-
-# Handle front controller
-RewriteCond %{REQUEST_FILENAME} !-d
+# Rewrite all other requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [L]
-
-# Enable CORS
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-Header set Access-Control-Allow-Headers "Content-Type, Authorization"
-
-# Remove .php extension
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME}\.php -f
-RewriteRule ^(.*)$ $1.php [NC,L]
+RewriteRule ^(.*)$ index.php [QSA,L]
 
 # Security headers
 Header set X-Content-Type-Options "nosniff"
 Header set X-Frame-Options "SAMEORIGIN"
 Header set X-XSS-Protection "1; mode=block"
-Header set Referrer-Policy "strict-origin-when-cross-origin"
+Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-# Prevent directory listing
-Options -Indexes
-
-# PHP settings
-php_value upload_max_filesize 10M
-php_value post_max_size 10M
-php_value max_execution_time 30
-php_value max_input_time 60 
+# CORS headers
+Header set Access-Control-Allow-Origin "https://twod3d-lottery.onrender.com"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+Header set Access-Control-Allow-Credentials "true" 

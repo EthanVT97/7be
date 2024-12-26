@@ -1,85 +1,73 @@
 services:
-  # Frontend Service
+  # Static frontend
   - type: web
-    name: 2d3d-lottery-frontend
+    name: 2d3d-lottery
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
-    pullRequestPreviewsEnabled: true
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: REACT_APP_API_URL
-        fromService:
-          name: 2d3d-lottery-backend
-          type: web
-          property: url
-      - key: REACT_APP_WS_URL
-        fromService:
-          name: 2d3d-lottery-backend
-          type: web
-          property: url
-          envVarKey: WS_URL
     routes:
+      # API routes
+      - type: rewrite
+        source: /api/*
+        destination: https://twod3d-lottery-api-q68w.onrender.com/api/:splat
+
+      # SPA routes - handle client-side routing
       - type: rewrite
         source: /*
         destination: /index.html
+
     headers:
       - path: /*
         name: Cache-Control
-        value: no-cache
+        value: public, max-age=31536000
       - path: /static/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
       - path: /*
         name: X-Frame-Options
         value: SAMEORIGIN
       - path: /*
         name: X-Content-Type-Options
         value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
-    healthCheckPath: /health
-    domains:
-      - 2d3d-lottery.onrender.com
 
-  # API backend
+  # Backend API
   - type: web
-    name: 2d3d-lottery-api
+    name: twod3d-lottery-api
     env: php
     buildCommand: |
-      composer require predis/predis
-      apt-get update && apt-get install -y libpq-dev
-      docker-php-ext-install pdo pdo_pgsql
+      apt-get update && apt-get install -y \
+        libpq-dev \
+        redis-server
+      pecl install redis
+      docker-php-ext-enable redis
       composer install --no-dev --optimize-autoloader
     startCommand: heroku-php-apache2 public/
-    healthCheckPath: /health.php
-    envVars:
-      - key: DB_HOST
-        fromDatabase:
-          name: 2d3d-lottery-db
-          property: host
-      - key: DB_NAME
-        fromDatabase:
-          name: 2d3d-lottery-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: 2d3d-lottery-db
-          property: user
-      - key: DB_PASS
-        fromDatabase:
-          name: 2d3d-lottery-db
-          property: password
-      - key: JWT_SECRET
-        generateValue: true
-      - key: CORS_ORIGIN
-        value: https://twod3d-lottery.onrender.com
-      - key: REDIS_URL
-        value: "redis://localhost:6379"
+    routes:
+      # Auth endpoints
+      - type: rewrite
+        source: /api/auth/*
+        destination: /api/auth/index.php
 
-databases:
-  - name: 2d3d-lottery-db
-    plan: free
+      # Status endpoint
+      - type: rewrite
+        source: /api/status
+        destination: /api/status/index.php
+
+      # Health check
+      - type: rewrite
+        source: /health
+        destination: /health.php
+
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://twod3d-lottery.onrender.com
+      - path: /*
+        name: Access-Control-Allow-Methods
+        value: GET, POST, OPTIONS, PUT, DELETE
+      - path: /*
+        name: Access-Control-Allow-Headers
+        value: Content-Type, Authorization
