@@ -6,6 +6,9 @@ if ! pgrep apache2 > /dev/null; then
     exit 1
 fi
 
+# Get port from environment or default to 80
+PORT=${PORT:-80}
+
 # Try to fetch the health endpoint
 response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT}/health)
 
