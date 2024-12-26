@@ -20,22 +20,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-try {
-    // Route handling will go here
+// Helper function for consistent responses
+function sendResponse($data, $status = 'success', $code = 200) {
+    http_response_code($code);
     echo json_encode([
-        'status' => 'success',
-        'message' => 'API is running',
-        'version' => '1.0.0',
+        'status' => $status,
         'timestamp' => date('Y-m-d H:i:s'),
-        'environment' => getenv('APP_ENV') ?: 'production'
+        'data' => $data
     ]);
-} catch (Exception $e) {
-    error_log("Error: " . $e->getMessage());
-    http_response_code(500);
+    exit();
+}
+
+// Helper function for error responses
+function sendError($message, $code = 400) {
+    http_response_code($code);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Internal Server Error',
-        'error' => $e->getMessage()
+        'timestamp' => date('Y-m-d H:i:s'),
+        'error' => $message
     ]);
+    exit();
+}
+
+try {
+    // Get the request URI and method
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    // Basic routing
+    switch ($uri) {
+        case '/':
+            sendResponse([
+                'name' => '2D3D Lottery API',
+                'version' => '1.0.0',
+                'environment' => getenv('APP_ENV') ?: 'production',
+                'endpoints' => [
+                    'health' => '/health',
+                    '2d_latest' => '/api/2d/latest',
+                    '3d_latest' => '/api/3d/latest'
+                ]
+            ]);
+            break;
+
+        case '/health':
+            try {
+                // Test database connection
+                $stmt = $conn->query('SELECT version()');
+                $dbVersion = $stmt->fetchColumn();
+
+                // Get connection stats
+                $stmt = $conn->query('SELECT count(*) FROM pg_stat_activity');
+                $activeConnections = $stmt->fetchColumn();
+
+                sendResponse([
+                    'database' => [
+                        'status' => 'connected',
+                        'version' => $dbVersion,
+                        'active_connections' => (int)$activeConnections,
+                        'host' => DB_HOST
+                    ],
+                    'memory' => [
+                        'usage' => memory_get_usage(true),
+                        'peak' => memory_get_peak_usage(true)
+                    ],
+                    'server' => [
+                        'php_version' => PHP_VERSION,
+                        'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'PHP Built-in Server'
+                    ]
+                ]);
+            } catch (Exception $e) {
+                sendError('Database connection failed: ' . $e->getMessage(), 500);
+            }
+            break;
+
+        case '/api/2d/latest':
+            if ($method !== 'GET') {
+                sendError('Method not allowed', 405);
+            }
+            
+            sendResponse([
+                'date' => date('Y-m-d'),
+                'time' => '4:30 PM',
+                'number' => '12',
+                'set' => date('l'), // Day of the week
+                'next_draw' => date('Y-m-d', strtotime('+1 day')) . ' 4:30 PM'
+            ]);
+            break;
+
+        case '/api/3d/latest':
+            if ($method !== 'GET') {
+                sendError('Method not allowed', 405);
+            }
+            
+            sendResponse([
+                'date' => date('Y-m-d'),
+                'number' => '123',
+                'set' => date('F'), // Month name
+                'next_draw' => date('Y-m-d', strtotime('+1 month')) . ' 5:00 PM'
+            ]);
+            break;
+
+        case '/favicon.ico':
+            http_response_code(204); // No content
+            break;
+
+        default:
+            sendError('Endpoint not found: ' . $uri, 404);
+            break;
+    }
+} catch (Exception $e) {
+    error_log("Error: " . $e->getMessage());
+    sendError('Internal Server Error: ' . $e->getMessage(), 500);
 }
 ?>
