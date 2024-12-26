@@ -1,33 +1,41 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
-use App\Database\Connection;
-
 header('Content-Type: application/json');
 
-try {
-    // Test database connection
-    if (!Connection::test()) {
-        throw new Exception('Database connection failed');
-    }
-
-    // Return success response
-    http_response_code(200);
-    echo json_encode([
-        'status' => 'healthy',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'checks' => [
-            'database' => 'connected'
+$health = [
+    'healthy' => true,
+    'timestamp' => time(),
+    'checks' => [
+        'database' => [
+            'success' => false,
+            'message' => 'Not checked'
         ]
-    ]);
+    ]
+];
 
-} catch (Exception $e) {
-    // Return error response
+try {
+    $dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', 
+        getenv('DB_HOST'), 
+        getenv('DB_DATABASE')
+    );
+    
+    $pdo = new PDO($dsn, 
+        getenv('DB_USERNAME'), 
+        getenv('DB_PASSWORD'),
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    
+    $health['checks']['database'] = [
+        'success' => true,
+        'message' => 'Connected successfully'
+    ];
+} catch (PDOException $e) {
+    $health['checks']['database'] = [
+        'success' => false,
+        'message' => 'Connection failed: ' . $e->getMessage()
+    ];
+    $health['healthy'] = false;
     http_response_code(503);
-    echo json_encode([
-        'status' => 'unhealthy',
-        'timestamp' => date('Y-m-d H:i:s'),
-        'error' => $e->getMessage()
-    ]);
 }
+
+echo json_encode($health, JSON_PRETTY_PRINT);
