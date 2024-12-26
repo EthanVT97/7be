@@ -3,57 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="2D3D ထီ - မြန်မာနိုင်ငံ၏ ယုံကြည်စိတ်ချရသော အွန်လိုင်းထီဝန်ဆောင်မှု">
-    <meta name="theme-color" content="#4a90e2">
+    <title>2D3D Lottery - Myanmar's Premier Online Lottery Platform</title>
     
-    <title>2D3D ထီ</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
-    <!-- သင်္ကေတပုံများ -->
-    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
-    <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- အရေးကြီးဖိုင်များအား ကြိုတင်ရယူထားခြင်း -->
-    <link rel="preload" href="/assets/css/bootstrap.min.css" as="style">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" as="style">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <!-- CSS ဖိုင်များ -->
-    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    
-    <!-- လုံခြုံရေးဆိုင်ရာ headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://twod3d-lottery-api-q68w.onrender.com;">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
 </head>
-<body class="myanmar-text">
+<body>
+    <!-- Alert Container -->
+    <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="/">2D3D ထီ</a>
+            <a class="navbar-brand" href="/">
+                <img src="/assets/logo.png" alt="2D3D Lottery" height="30">
+            </a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <?php if (isset($_SESSION['user'])): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/dashboard">ဒိုင်ခွက်</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link logout-btn" href="/logout">ထွက်ရန်</a>
-                        </li>
-                    <?php else: ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login">အကောင့်ဝင်ရန်</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/register">အကောင့်ဖွင့်ရန်</a>
-                        </li>
-                    <?php endif; ?>
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">ပင်မစာမျက်နှာ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/play">ထီထိုးရန်</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/results">ထီပေါက်စဉ်များ</a>
+                    </li>
                 </ul>
+                
+                <!-- Auth Buttons -->
+                <div id="authButtons" class="d-flex">
+                    <button class="btn btn-outline-light me-2" onclick="window.auth.showLoginModal()">
+                        <i class="fas fa-sign-in-alt"></i> ဝင်ရောက်ရန်
+                    </button>
+                    <button class="btn btn-light" onclick="window.auth.showRegisterModal()">
+                        <i class="fas fa-user-plus"></i> အကောင့်ဖွင့်ရန်
+                    </button>
+                </div>
+                
+                <!-- User Info (Hidden by default) -->
+                <div id="userInfo" class="d-none text-light">
+                    <span class="me-2">
+                        <i class="fas fa-user"></i>
+                        <span class="username"></span>
+                    </span>
+                    <span class="me-3">
+                        <i class="fas fa-wallet"></i>
+                        <span class="balance"></span> Ks
+                    </span>
+                    <button class="btn btn-outline-light btn-sm" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
+
+    <!-- Main Content Container -->
     <main class="container py-4"> 
