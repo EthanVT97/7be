@@ -16,13 +16,13 @@ $health = [
 try {
     $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
         getenv('DB_HOST'), 
-        getenv('DB_DATABASE'),
+        getenv('DB_NAME'),
         getenv('DB_PORT') ?? '5432'
     );
     
     $pdo = new PDO($dsn, 
-        getenv('DB_USERNAME'), 
-        getenv('DB_PASSWORD'),
+        getenv('DB_USER'), 
+        getenv('DB_PASS'),
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     

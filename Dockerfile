@@ -61,7 +61,8 @@ RUN chown -R www-data:www-data /var/www/html
 # Set up environment variables
 ENV APP_ENV=production \
     APP_DEBUG=false \
-    LOG_CHANNEL=stderr
+    LOG_CHANNEL=stderr \
+    DB_CONNECTION=pgsql
 
 # Security headers
 RUN echo 'Header set X-Content-Type-Options "nosniff"' >> /etc/apache2/conf-available/security.conf
@@ -85,5 +86,8 @@ COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 # Install PostgreSQL client and PDO driver
 RUN apt-get update && apt-get install -y libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql
+
+# Remove MySQL driver since we're using PostgreSQL
+RUN docker-php-ext-disable pdo_mysql
 
 CMD ["/usr/local/bin/start.sh"]
