@@ -1,7 +1,7 @@
 export class ConnectionTest {
     static async checkConnection() {
         try {
-            const response = await fetch('http://localhost:8000/health.php');
+            const response = await fetch('https://twod3dbe.onrender.com/health.php');
             const data = await response.json();
             
             if (!response.ok) {
@@ -23,7 +23,7 @@ export class ConnectionTest {
 
     static async testDatabaseConnection() {
         try {
-            const response = await fetch('http://localhost:8000/api/test/database');
+            const response = await fetch('https://twod3dbe.onrender.com/api/test/database');
             const data = await response.json();
             
             return {
