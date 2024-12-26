@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 /node_modules
 /.pnp
@@ -29,5 +30,39 @@ yarn-debug.log*
 yarn-error.log*
 
 # OS
+=======
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dependencies
+/vendor
+/node_modules
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+/logs/*
+!logs/.gitkeep
+
+# Cache
+/cache/*
+!cache/.gitkeep
+
+# Uploaded files
+/public/uploads/*
+!public/uploads/.gitkeep
+
+# Build files
+/dist
+/build
+
+# OS files
+>>>>>>> aa145722f6a011a22d3e9f2b280787ab3c45a8fc
 .DS_Store
 Thumbs.db 

@@ -18,18 +18,13 @@ class Connection {
 
     private static function connect() {
         try {
-            // Check if environment variables are loaded
-            if (!function_exists('getenv')) {
-                throw new PDOException('Environment functions not available');
-            }
-
             // Get database config
             $dbConfig = [
-                'host' => getenv('DB_HOST'),
-                'port' => getenv('DB_PORT') ?? '5432',
-                'name' => getenv('DB_NAME'),
-                'user' => getenv('DB_USER'),
-                'pass' => getenv('DB_PASS')
+                'host' => $_ENV['DB_HOST'],
+                'port' => $_ENV['DB_PORT'] ?? '5432',
+                'name' => $_ENV['DB_NAME'],
+                'user' => $_ENV['DB_USER'],
+                'pass' => $_ENV['DB_PASS']
             ];
 
             // Validate config

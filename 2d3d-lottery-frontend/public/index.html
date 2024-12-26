@@ -3,30 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D3D Lottery</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta name="description" content="2D3D ထီ - မြန်မာနိုင်ငံ၏ ယုံကြည်စိတ်ချရသော အွန်လိုင်းထီဝန်ဆောင်မှု">
+    <title>2D3D ထီ</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="myanmar-text">
     <div id="app">
-        <nav class="navbar">
-            <div class="brand">2D3D Lottery</div>
-            <div class="user-info" id="userInfo" style="display: none;">
-                <span id="userName"></span>
-                <button id="logoutBtn">ထွက်ရန်</button>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <!-- Brand -->
+                <a class="navbar-brand" href="/">
+                    <img src="/assets/images/logo.png" alt="2D3D ထီ" height="30">
+                    2D3D ထီ
+                </a>
+
+                <!-- Mobile Toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Nav Links -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        <!-- User Info (Logged in) -->
+                        <li class="nav-item dropdown" id="userInfo" style="display: none;">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-2"></i>
+                                <span id="userName"></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="/profile">
+                                        <i class="fas fa-user me-2"></i>
+                                        ပရိုဖိုင်
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/transactions">
+                                        <i class="fas fa-history me-2"></i>
+                                        မှတ်တမ်းများ
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item text-danger" id="logoutBtn">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        ထွက်ရန်
+                                    </button>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Auth Links (Logged out) -->
+                        <li class="nav-item" id="authLinks">
+                            <a class="btn btn-outline-light me-2" href="/login">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                အကောင့်ဝင်ရန်
+                            </a>
+                            <a class="btn btn-light" href="/register">
+                                <i class="fas fa-user-plus me-2"></i>
+                                အကောင့်ဖွင့်ရန်
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </nav>
 
-        <div class="container">
-            <div id="loginForm" style="display: none;">
-                <!-- Login form will be dynamically loaded -->
+        <!-- Main Content -->
+        <main class="container py-4">
+            <div id="mainContent">
+                <!-- Content will be loaded dynamically -->
             </div>
-
-            <div id="mainContent" style="display: none;">
-                <!-- Main content will be dynamically loaded based on user role -->
-            </div>
-        </div>
+        </main>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="spinner-border text-primary"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { ApiService } from './js/services/api.service.js';
         import { AuthGuard } from './js/guards/auth.guard.js';
@@ -37,24 +105,36 @@
                 if (AuthGuard.checkAuth()) {
                     const user = ApiService.getCurrentUser();
                     if (user) {
+                        // Update UI for logged in user
                         document.getElementById('userName').textContent = user.name;
                         document.getElementById('userInfo').style.display = 'block';
+                        document.getElementById('authLinks').style.display = 'none';
                         
                         // Redirect to appropriate dashboard
-                        window.location.href = `/${user.role}/dashboard.html`;
+                        window.location.href = `/${user.role}/dashboard`;
                     }
                 } else {
-                    window.location.href = '/login.html';
+                    // Show auth links for logged out user
+                    document.getElementById('userInfo').style.display = 'none';
+                    document.getElementById('authLinks').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Authentication error:', error);
-                window.location.href = '/login.html';
+                // Handle error (show notification, etc)
             }
         });
 
         // Logout handler
-        document.getElementById('logoutBtn')?.addEventListener('click', () => {
-            ApiService.logout();
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            try {
+                document.getElementById('loadingOverlay').classList.remove('d-none');
+                await ApiService.logout();
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Handle error
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('d-none');
+            }
         });
     </script>
 </body>

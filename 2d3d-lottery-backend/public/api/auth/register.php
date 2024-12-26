@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);
+    error_log("Raw request data: " . print_r($data, true));
 
     if (
         !isset($data['username']) || !isset($data['email']) ||
@@ -33,8 +34,14 @@ try {
         $data['password']
     );
 
+    if ($result['success']) {
+        http_response_code(201);
+    } else {
+        http_response_code(400);
+    }
     echo json_encode($result);
 } catch (Exception $e) {
+    error_log("Registration error: " . $e->getMessage());
     http_response_code(400);
     echo json_encode([
         'success' => false,

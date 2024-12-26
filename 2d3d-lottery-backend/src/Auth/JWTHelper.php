@@ -1,34 +1,45 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
+namespace App\Auth;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Exception;
 
 class JWTHelper {
-    private static function getKey() {
-        return $_ENV['JWT_SECRET'] ?? 'your_secure_random_key_here';
+    private static $key;
+    private static $algorithm = 'HS256';
+    private static $expiry = 3600; // 1 hour
+
+    public static function init() {
+        self::$key = getenv('JWT_SECRET');
+        if (!self::$key) {
+            throw new Exception('JWT_SECRET environment variable is not set');
+        }
     }
-    
-    public static function generateToken($user) {
-        $payload = [
-            'iss' => 'https://twod3d-lottery-api.onrender.com',
-            'aud' => 'https://twod3d-lottery.onrender.com',
-            'iat' => time(),
-            'exp' => time() + (60 * 60 * 24), // 24 hours
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'role' => $user['role']
-            ]
+
+    public static function generateToken($payload) {
+        self::init();
+
+        $issuedAt = time();
+        $expire = $issuedAt + self::$expiry;
+
+        $token = [
+            'iat' => $issuedAt,
+            'exp' => $expire,
+            'data' => $payload
         ];
-        
-        return JWT::encode($payload, self::getKey(), 'HS256');
+
+        return JWT::encode($token, self::$key, self::$algorithm);
     }
-    
-    public static function validateToken($token) {
+
+    public static function verifyToken($token) {
+        self::init();
+
         try {
-            return JWT::decode($token, new Key(self::getKey(), 'HS256'));
+            $decoded = JWT::decode($token, new Key(self::$key, self::$algorithm));
+            return $decoded->data;
         } catch (Exception $e) {
+            error_log("JWT verification error: " . $e->getMessage());
             return false;
         }
     }

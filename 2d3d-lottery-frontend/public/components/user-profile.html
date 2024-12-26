@@ -1,0 +1,65 @@
+<div class="profile-section">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-user me-2"></i>
+                ကိုယ်ရေးအချက်အလက်
+            </h5>
+        </div>
+        <div class="card-body">
+            <form id="profileForm">
+                <div class="mb-3">
+                    <label class="form-label">အသုံးပြုသူအမည်</label>
+                    <input type="text" class="form-control" id="username" readonly>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">ဖုန်းနံပါတ်</label>
+                    <input type="tel" class="form-control" id="phone" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">အီးမေးလ်</label>
+                    <input type="email" class="form-control" id="email">
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>
+                    သိမ်းဆည်းမည်
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-lock me-2"></i>
+                လျှို့ဝှက်နံပါတ် ပြောင်းလဲရန်
+            </h5>
+        </div>
+        <div class="card-body">
+            <form id="passwordForm">
+                <div class="mb-3">
+                    <label class="form-label">လက်ရှိလျှို့ဝှက်နံပါတ်</label>
+                    <input type="password" class="form-control" id="currentPassword" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">လျှို့ဝှက်နံပါတ်အသစ်</label>
+                    <input type="password" class="form-control" id="newPassword" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">လျှို့ဝှက်နံပါတ်အသစ် အတည်ပြုရန်</label>
+                    <input type="password" class="form-control" id="confirmPassword" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-key me-2"></i>
+                    ပြောင်းလဲမည်
+                </button>
+            </form>
+        </div>
+    </div>
+</div> 

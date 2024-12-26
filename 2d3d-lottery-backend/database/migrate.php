@@ -1,43 +1,38 @@
 <?php
-
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../src/Database/Connection.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 use App\Database\Connection;
 
 try {
-    // Create database connection
-    $pdo = Connection::getInstance();
+    // Get database connection
+    $db = Connection::getInstance();
     
-    echo "Starting database migration...\n";
+    // Get all migration files
+    $migrations = glob(__DIR__ . '/migrations/*.sql');
+    sort($migrations); // Sort by filename
     
-    // Array of migration files in order
-    $migrations = [
-        __DIR__ . '/migrations/001_create_users_table.sql',
-        __DIR__ . '/migrations/002_create_lottery_numbers_table.sql',
-        __DIR__ . '/migrations/003_create_bets_table.sql',
-        __DIR__ . '/migrations/004_create_transactions_table.sql'
-    ];
+    // Begin transaction
+    $db->beginTransaction();
     
-    // Execute each migration
     foreach ($migrations as $migration) {
-        echo "Executing migration: " . basename($migration) . "\n";
-        // Read migration file
+        echo "Running migration: " . basename($migration) . "\n";
+        
+        // Read and execute migration
         $sql = file_get_contents($migration);
+        $db->exec($sql);
         
-        // Convert SQLite syntax to PostgreSQL
-        $sql = str_replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY', $sql);
-        $sql = str_replace('DATETIME', 'TIMESTAMP', $sql);
-        $sql = str_replace('TEXT', 'VARCHAR(255)', $sql);
-        
-        // Execute migration
-        $pdo->exec($sql);
-        echo "Migration " . basename($migration) . " completed successfully.\n";
+        echo "Completed migration: " . basename($migration) . "\n";
     }
     
-    echo "All migrations completed successfully!\n";
+    // Commit transaction
+    $db->commit();
+    echo "All migrations completed successfully.\n";
     
 } catch (Exception $e) {
+    // Rollback transaction on error
+    if (isset($db)) {
+        $db->rollBack();
+    }
     echo "Error during migration: " . $e->getMessage() . "\n";
     exit(1);
 } 

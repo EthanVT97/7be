@@ -57,20 +57,29 @@ async function handleApiResponse(response) {
 // Check authentication
 async function checkAuth() {
     try {
-        const response = await fetch('/api/auth/check');
+        const response = await fetch('/api/auth/check', {
+            credentials: 'include'
+        });
+        
         if (!response.ok) {
-            window.location.href = '/login';
+            if (response.status === 401) {
+                window.location.href = '/login';
+            }
             return false;
         }
-        return true;
+        
+        const data = await response.json();
+        return data.user;
     } catch (error) {
-        console.error('Auth check error:', error);
+        console.error('Auth check failed:', error);
         return false;
     }
 }
 
 // Handle logout
-async function handleLogout() {
+async function handleLogout(e) {
+    e.preventDefault();
+    
     try {
         const response = await fetch('/api/auth/logout', {
             method: 'POST',
@@ -78,11 +87,15 @@ async function handleLogout() {
         });
         
         if (response.ok) {
-            showNotification(messages.success.logout, 'success');
+            // Clear any local storage data
+            localStorage.clear();
             window.location.href = '/login';
+        } else {
+            throw new Error('Logout failed');
         }
     } catch (error) {
-        showNotification(messages.error.general);
+        console.error('Logout error:', error);
+        showNotification('ထွက်ခွာ၍မရပါ။ ထပ်မံကြိုးစားကြည့်ပါ။', 'error');
     }
 }
 

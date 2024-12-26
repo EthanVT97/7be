@@ -1,0 +1,28 @@
+{
+    "name": "2d3d/lottery",
+    "description": "2D3D Lottery System",
+    "type": "project",
+    "require": {
+        "php": "^8.0",
+        "vlucas/phpdotenv": "^5.5",
+        "firebase/php-jwt": "^6.9",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php database/migrate.php"
+        ]
+    }
+}

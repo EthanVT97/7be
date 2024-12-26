@@ -44,10 +44,9 @@ class Database {
                 
                 // Timeouts
                 PDO::ATTR_TIMEOUT => getenv('DB_TIMEOUT') ?: 5,
-                PDO::ATTR_CONNECTION_TIMEOUT => getenv('DB_CONNECTION_TIMEOUT') ?: 2,
                 
                 // SSL Configuration
-                PDO::PGSQL_ATTR_SSL_MODE => PDO::PGSQL_SSL_REQUIRE,
+                'sslmode' => 'require',
                 
                 // Connection Pool
                 'max_connections' => getenv('DB_MAX_CONNECTIONS') ?: 20,
