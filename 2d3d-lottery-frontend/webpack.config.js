@@ -16,7 +16,8 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].[contenthash].js',
     publicPath: '/',
-    clean: true
+    clean: true,
+    assetModuleFilename: 'assets/[name].[contenthash][ext]'
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -60,7 +61,7 @@ module.exports = {
         use: ['style-loader', 'css-loader', 'sass-loader']
       },
       {
-        test: /\.(png|jpg|gif|svg)$/,
+        test: /\.(png|jpg|gif|svg|woff2?|ttf|eot)$/,
         type: 'asset/resource'
       }
     ]
@@ -69,18 +70,40 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
       filename: 'index.html',
-      inject: 'body'
+      inject: 'body',
+      minify: {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        removeEmptyAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        keepClosingSlash: true,
+        minifyJS: true,
+        minifyCSS: true,
+        minifyURLs: true
+      }
     }),
     new webpack.DefinePlugin(envKeys)
   ],
   optimization: {
     splitChunks: {
       chunks: 'all',
-      name: false
-    }
+      name: false,
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    },
+    runtimeChunk: 'single'
   },
   performance: {
-    hints: false
+    hints: false,
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000
   },
   devServer: {
     static: {
@@ -89,6 +112,9 @@ module.exports = {
     compress: true,
     port: 3000,
     hot: true,
-    historyApiFallback: true
+    historyApiFallback: true,
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    }
   }
 };
