@@ -18,12 +18,10 @@ COPY public/ /var/www/html/
 COPY .htaccess /var/www/html/.htaccess
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Remove any static HTML files except index.html
-RUN find /var/www/html -type f -name "*.html" ! -name "index.html" -delete
-
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+    && find /var/www/html -type d -exec chmod 755 {} \; \
+    && find /var/www/html -type f -exec chmod 644 {} \;
 
 # Configure Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
