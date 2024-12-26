@@ -18,17 +18,31 @@ class Connection {
 
     private static function connect() {
         try {
+            // Check if environment variables are loaded
+            if (!function_exists('getenv')) {
+                throw new PDOException('Environment functions not available');
+            }
+
             // Get database config
             $dbConfig = [
-                'host' => $_ENV['DB_HOST'],
-                'name' => $_ENV['DB_NAME'],
-                'user' => $_ENV['DB_USER'],
-                'pass' => $_ENV['DB_PASS']
+                'host' => getenv('DB_HOST'),
+                'port' => getenv('DB_PORT') ?: '5432',
+                'name' => getenv('DB_NAME'),
+                'user' => getenv('DB_USER'),
+                'pass' => getenv('DB_PASS')
             ];
 
+            // Validate config
+            foreach ($dbConfig as $key => $value) {
+                if (empty($value)) {
+                    throw new PDOException("Database configuration missing: {$key}");
+                }
+            }
+
             // Create connection
+            $dsn = "pgsql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['name']};sslmode=require";
             self::$instance = new PDO(
-                "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4",
+                $dsn,
                 $dbConfig['user'],
                 $dbConfig['pass'],
                 [
@@ -44,7 +58,7 @@ class Connection {
 
         } catch (PDOException $e) {
             self::$attempts++;
-            error_log("Database connection attempt {$self::$attempts} failed: " . $e->getMessage());
+            error_log("Database connection attempt " . self::$attempts . " failed: " . $e->getMessage());
 
             if (self::$attempts < self::$maxAttempts) {
                 // Wait before retrying (exponential backoff)
@@ -52,7 +66,10 @@ class Connection {
                 return self::connect();
             }
 
-            throw new PDOException("Database connection failed after {$self::$maxAttempts} attempts");
+            throw new PDOException(
+                "Database connection failed after " . self::$maxAttempts . " attempts. " .
+                "Last error: " . $e->getMessage()
+            );
         }
     }
 
