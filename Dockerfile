@@ -6,8 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with specific npm version
+RUN npm install -g npm@10.8.2 && \
+    npm install
 
 # Copy source code
 COPY . .
