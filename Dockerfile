@@ -76,5 +76,7 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD curl -f http://localhost/health.php || exit 1
 
-# Start Apache
-CMD ["apache2-foreground"]
+COPY docker/start.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/start.sh
+
+CMD ["/usr/local/bin/start.sh"]
