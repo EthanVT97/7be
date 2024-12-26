@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../includes/config.php';
 
 // Error handling
 error_reporting(E_ALL);
