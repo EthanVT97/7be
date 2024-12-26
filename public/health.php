@@ -2,41 +2,55 @@
 
 header('Content-Type: application/json');
 
-$health = [
-    'healthy' => true,
-    'timestamp' => time(),
-    'checks' => [
-        'database' => [
-            'success' => false,
-            'message' => 'Not checked'
-        ]
-    ]
-];
-
 try {
+    // Check environment variables
+    $requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD'];
+    $missingEnvVars = [];
+    foreach ($requiredEnvVars as $var) {
+        if (!getenv($var)) {
+            $missingEnvVars[] = $var;
+        }
+    }
+
+    if (!empty($missingEnvVars)) {
+        throw new Exception('Missing required environment variables: ' . implode(', ', $missingEnvVars));
+    }
+
+    // Test database connection
     $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
-        getenv('DB_HOST'), 
-        getenv('DB_NAME'),
-        getenv('DB_PORT') ?? '5432'
+        getenv('POSTGRES_HOST'), 
+        getenv('POSTGRES_DB'),
+        getenv('POSTGRES_PORT') ?? '5432'
     );
     
     $pdo = new PDO($dsn, 
-        getenv('DB_USER'), 
-        getenv('DB_PASS'),
+        getenv('POSTGRES_USER'), 
+        getenv('POSTGRES_PASSWORD'),
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
-    $health['checks']['database'] = [
-        'success' => true,
-        'message' => 'Connected successfully'
-    ];
-} catch (PDOException $e) {
-    $health['checks']['database'] = [
-        'success' => false,
-        'message' => 'Connection failed: ' . $e->getMessage()
-    ];
-    $health['healthy'] = false;
-    http_response_code(503);
-}
+    // Test query
+    $stmt = $pdo->query('SELECT version()');
+    $version = $stmt->fetch(PDO::FETCH_COLUMN);
 
-echo json_encode($health, JSON_PRETTY_PRINT);
+    echo json_encode([
+        'status' => 'healthy',
+        'timestamp' => date('Y-m-d H:i:s'),
+        'checks' => [
+            'database' => [
+                'status' => 'connected',
+                'version' => $version
+            ],
+            'environment' => 'configured'
+        ]
+    ]);
+
+} catch (Exception $e) {
+    error_log('Health check failed: ' . $e->getMessage());
+    http_response_code(503);
+    echo json_encode([
+        'status' => 'unhealthy',
+        'timestamp' => date('Y-m-d H:i:s'),
+        'error' => $e->getMessage()
+    ]);
+}

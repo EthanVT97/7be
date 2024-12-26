@@ -32,26 +32,24 @@ services:
     startCommand: heroku-php-apache2 public/
     healthCheckPath: /health.php
     envVars:
-      - key: DB_HOST
+      - key: POSTGRES_HOST
         fromDatabase:
           name: 2d3d-lottery-db
           property: host
-      - key: DB_NAME
+      - key: POSTGRES_DB
         fromDatabase:
           name: 2d3d-lottery-db
           property: database
-      - key: DB_USER
+      - key: POSTGRES_USER
         fromDatabase:
           name: 2d3d-lottery-db
           property: user
-      - key: DB_PASS
+      - key: POSTGRES_PASSWORD
         fromDatabase:
           name: 2d3d-lottery-db
           property: password
-      - key: DB_PORT
+      - key: POSTGRES_PORT
         value: "5432"
-      - key: DB_CONNECTION
-        value: pgsql
 
 databases:
   - name: 2d3d-lottery-db
