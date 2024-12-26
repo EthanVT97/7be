@@ -1,7 +1,10 @@
 RewriteEngine On
 
-# Force HTTPS
+# Force HTTPS only in production
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Handle Authorization header
@@ -22,7 +25,8 @@ Header set X-XSS-Protection "1; mode=block"
 Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
 # CORS headers
-Header set Access-Control-Allow-Origin "https://twod3d-lottery-api-q68w.onrender.com"
+SetEnvIf Origin "^https?://[^/]+$" CORS_ORIGIN=$0
+Header set Access-Control-Allow-Origin "%{CORS_ORIGIN}e" env=CORS_ORIGIN
 Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
 Header set Access-Control-Allow-Headers "Content-Type, Authorization"
 Header set Access-Control-Allow-Credentials "true"

@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install zip
 
 # Enable Apache modules
-RUN a2enmod rewrite headers
+RUN a2enmod rewrite headers ssl
 
 # Set working directory
 WORKDIR /var/www/html
@@ -16,6 +16,7 @@ WORKDIR /var/www/html
 # Copy application files
 COPY public/ /var/www/html/
 COPY .htaccess /var/www/html/.htaccess
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
@@ -24,8 +25,12 @@ RUN chown -R www-data:www-data /var/www/html \
 # Configure Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Expose port 80
+# Enable the site
+RUN a2ensite 000-default
+
+# Expose ports
 EXPOSE 80
+EXPOSE 443
 
 # Start Apache
 CMD ["apache2-foreground"] 

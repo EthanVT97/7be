@@ -7,11 +7,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:80"
+      - "8443:443"
     volumes:
       - ./public:/var/www/html
       - ./.htaccess:/var/www/html/.htaccess
+      - ./apache.conf:/etc/apache2/sites-available/000-default.conf
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
+      - APP_ENV=development
     networks:
       - app-network
 
