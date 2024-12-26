@@ -1,8 +1,8 @@
 # Enable rewrite engine
 RewriteEngine On
 
-# Allow health check
-RewriteRule ^health\.php$ - [L]
+# Allow health check (update path if needed)
+RewriteRule ^health\.php$ public/health.php [L]
 
 # Redirect all requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
