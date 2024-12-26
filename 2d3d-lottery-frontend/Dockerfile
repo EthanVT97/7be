@@ -1,38 +1,49 @@
-FROM php:8.2-apache
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
-    zip \
-    unzip \
-    && docker-php-ext-install zip
-
-# Enable Apache modules
-RUN a2enmod rewrite headers ssl
+# Build stage
+FROM node:18.17.0-alpine as builder
 
 # Set working directory
-WORKDIR /var/www/html
+WORKDIR /app
 
-# Copy static files
-COPY public/ /var/www/html/
-COPY .htaccess /var/www/html/.htaccess
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
+# Install dependencies first (for better caching)
+COPY package*.json ./
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && find /var/www/html -type d -exec chmod 755 {} \; \
-    && find /var/www/html -type f -exec chmod 644 {} \;
+# Install dependencies with specific npm version and clean install
+RUN npm install -g npm@10.8.2 && \
+    npm ci --only=production
 
-# Configure Apache
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
-    && echo "DirectoryIndex index.html" >> /etc/apache2/apache2.conf
+# Copy source code
+COPY . .
 
-# Enable the site
-RUN a2ensite 000-default
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+
+# Install required packages
+RUN apk add --no-cache bash curl openssl
+
+# Generate self-signed certificate for development
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/nginx-selfsigned.key \
+    -out /etc/ssl/certs/nginx-selfsigned.crt \
+    -subj "/C=US/ST=CA/L=San Francisco/O=Render/CN=twod3d-lottery.onrender.com"
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy built assets from builder stage
+COPY --from=builder /app/public /app/public
+
+# Copy health check script
+COPY scripts/healthcheck.sh /healthcheck.sh
+RUN chmod +x /healthcheck.sh
+
+# Create nginx pid directory
+RUN mkdir -p /run/nginx
 
 # Expose ports
-EXPOSE 80
-EXPOSE 443
+EXPOSE 80 443
 
-# Start Apache
-CMD ["apache2-foreground"] 
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
