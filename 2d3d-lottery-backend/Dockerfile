@@ -53,16 +53,23 @@ RUN chmod +x /usr/local/bin/start.sh
 # Create necessary directories with proper permissions
 RUN mkdir -p /var/www/html/storage/logs \
     && mkdir -p /var/www/html/storage/cache \
-    && mkdir -p /var/www/html/storage/sessions
+    && mkdir -p /var/www/html/storage/sessions \
+    && mkdir -p /var/www/html/public
 
 # Copy application files
 WORKDIR /var/www/html
 COPY --from=composer /app .
 
+# Ensure .htaccess files are in place
+COPY public/.htaccess /var/www/html/public/.htaccess
+COPY .htaccess /var/www/html/.htaccess
+
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/public
+    && chmod -R 755 /var/www/html/public \
+    && chmod 644 /var/www/html/public/.htaccess \
+    && chmod 644 /var/www/html/.htaccess
 
 # Expose port
 EXPOSE 80 443

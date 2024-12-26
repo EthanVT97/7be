@@ -1,31 +1,54 @@
 # Enable rewrite engine
-RewriteEngine On
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
 
-# Force HTTPS
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Allow direct access to health check
-RewriteRule ^health\.php$ - [L]
+    # Allow health check
+    RewriteRule ^health$ health.php [L,NC]
 
-# API Endpoints
-RewriteRule ^api/auth/(login|register|refresh|logout)$ api/auth/index.php?action=$1 [QSA,L]
-RewriteRule ^api/status/?$ api/status/index.php [L]
-RewriteRule ^api/health/?$ health.php [L]
-
-# Rewrite all other requests to index.php
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]
+    # Forward all other requests to index.php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
 
 # Security headers
-Header set X-Content-Type-Options "nosniff"
-Header set X-Frame-Options "SAMEORIGIN"
-Header set X-XSS-Protection "1; mode=block"
-Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+<IfModule mod_headers.c>
+    # CORS Headers
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+    Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    Header always set Access-Control-Allow-Credentials "true"
+    Header always set Access-Control-Max-Age "3600"
+    
+    # Security Headers
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; connect-src 'self' https://twod3d-lottery-api-q68w.onrender.com https://twod3d.onrender.com;"
+</IfModule>
 
-# CORS headers
-Header set Access-Control-Allow-Origin "https://twod3d-lottery.onrender.com"
-Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
-Header set Access-Control-Allow-Headers "Content-Type, Authorization"
-Header set Access-Control-Allow-Credentials "true" 
+# PHP settings
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 60
+    php_value max_input_time 60
+    php_value memory_limit 256M
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# Compress text files
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json
+</IfModule> 
