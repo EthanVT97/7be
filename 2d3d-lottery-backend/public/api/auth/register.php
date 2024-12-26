@@ -1,11 +1,18 @@
 <?php
-header('Content-Type: application/json');
-require_once __DIR__ . '/../../../includes/auth.php';
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
+use App\Auth\AuthController;
+use App\Database\Connection;
+
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: https://twod3d-lottery.onrender.com');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Credentials: true');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
 try {
@@ -18,7 +25,7 @@ try {
         throw new Exception('အချက်အလက်များ မပြည့်စုံပါ။');
     }
 
-    $auth = new Auth($conn);
+    $auth = new AuthController(Connection::getInstance());
     $result = $auth->register(
         $data['username'],
         $data['email'],
