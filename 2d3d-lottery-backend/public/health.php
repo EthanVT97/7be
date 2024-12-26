@@ -1,6 +1,22 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Define constants for service statuses
+define('STATUS_HEALTHY', 'healthy');
+define('STATUS_CONNECTED', 'connected');
+define('STATUS_ERROR', 'error');
+define('STATUS_DISABLED', 'disabled');
+define('STATUS_CHECKING', 'checking');
+
+// Check Redis extension and class
+if (!extension_loaded('redis')) {
+    throw new Exception('Redis extension is not loaded');
+}
+
+if (!class_exists('Redis')) {
+    throw new Exception('Redis class is not available');
+}
+
 // Security headers
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -12,7 +28,8 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 // Define allowed origins
 $allowedOrigins = [
     'https://2d3d-lottery.onrender.com',
-    'https://twod3d-lottery.onrender.com'
+    'https://twod3d-lottery.onrender.com',
+    'https://twod3d-lottery-api-q68w.onrender.com'
 ];
 
 // Get the current origin
@@ -38,21 +55,27 @@ $startTime = microtime(true);
 $requestId = uniqid('health_', true);
 
 $health = [
-    'status' => 'healthy',
+    'status' => STATUS_HEALTHY,
     'timestamp' => date('Y-m-d H:i:s'),
     'request_id' => $requestId,
     'environment' => getenv('APP_ENV'),
     'checks' => [
         'database' => [
-            'status' => 'checking',
+            'status' => STATUS_CHECKING,
             'config' => [
                 'host' => getenv('DB_HOST'),
                 'port' => getenv('DB_PORT') ?? '5432',
                 'ssl_mode' => getenv('DB_SSL_MODE') ?? 'require'
             ]
         ],
+        'redis' => [
+            'status' => STATUS_CHECKING,
+            'config' => [
+                'url' => preg_replace('/:[^:]*@/', ':***@', getenv('REDIS_URL') ?? ''),
+            ]
+        ],
         'security' => [
-            'status' => 'checking',
+            'status' => STATUS_CHECKING,
             'client_ip' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'],
             'origin' => $origin,
             'render_ip' => false,
@@ -60,16 +83,32 @@ $health = [
             'origin_valid' => true
         ],
         'application' => [
-            'status' => 'healthy',
+            'status' => STATUS_HEALTHY,
             'version' => '1.0.0',
             'memory' => [
                 'used' => memory_get_usage(true),
                 'peak' => memory_get_peak_usage(true)
             ],
-            'uptime' => time() - $_SERVER['REQUEST_TIME']
+            'uptime' => time() - $_SERVER['REQUEST_TIME'],
+            'error_log' => error_get_last()
         ]
     ]
 ];
+
+// Enhanced error logging function
+function logHealthError($type, $message, $context = []) {
+    $logData = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'type' => $type,
+        'message' => $message,
+        'context' => $context,
+        'request_id' => $GLOBALS['requestId'] ?? uniqid(),
+        'client_ip' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'],
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+    ];
+    
+    error_log(json_encode($logData));
+}
 
 try {
     $dsn = sprintf(
@@ -99,19 +138,105 @@ try {
     $connectionTime = (microtime(true) - $startConnect) * 1000;
     
     $health['checks']['database'] = [
-        'status' => 'connected',
+        'status' => STATUS_CONNECTED,
         'version' => $version,
         'latency' => round($connectionTime, 2) . 'ms',
         'active_connections' => (int)$connections,
         'config' => $health['checks']['database']['config']
     ];
 
-    // Security check
+    // Redis check
+    if (getenv('REDIS_URL')) {
+        $startRedis = microtime(true);
+        $redisUrl = parse_url(getenv('REDIS_URL'));
+        
+        if ($redisUrl !== false) {
+            try {
+                $redis = new Redis();
+                $connected = @$redis->connect(
+                    $redisUrl['host'] ?? 'localhost',
+                    $redisUrl['port'] ?? 6379,
+                    5.0 // timeout
+                );
+                
+                if (!$connected) {
+                    throw new Exception('Failed to connect to Redis');
+                }
+                
+                if (isset($redisUrl['pass'])) {
+                    $authResult = @$redis->auth($redisUrl['pass']);
+                    if (!$authResult) {
+                        throw new Exception('Redis authentication failed');
+                    }
+                }
+                
+                // Test Redis connection with basic operations
+                $pingResult = @$redis->ping();
+                if ($pingResult !== '+PONG' && $pingResult !== true) {
+                    throw new Exception('Redis ping test failed');
+                }
+                
+                // Test Redis read/write
+                $setResult = @$redis->setex('health_check', 60, 'ok');
+                if (!$setResult) {
+                    throw new Exception('Redis write test failed');
+                }
+                
+                $testValue = @$redis->get('health_check');
+                if ($testValue !== 'ok') {
+                    throw new Exception('Redis read test failed');
+                }
+                
+                // Get Redis info
+                $redisInfo = @$redis->info();
+                if (!is_array($redisInfo)) {
+                    throw new Exception('Failed to get Redis info');
+                }
+                
+                $redisLatency = (microtime(true) - $startRedis) * 1000;
+                
+                $health['checks']['redis'] = [
+                    'status' => STATUS_CONNECTED,
+                    'version' => $redisInfo['redis_version'] ?? 'unknown',
+                    'latency' => round($redisLatency, 2) . 'ms',
+                    'memory_used' => $redisInfo['used_memory_human'] ?? 'unknown',
+                    'connected_clients' => $redisInfo['connected_clients'] ?? 0,
+                    'config' => $health['checks']['redis']['config']
+                ];
+            } catch (Exception $e) {
+                logHealthError('redis_error', $e->getMessage(), [
+                    'redis_url' => $redisUrl['host'] ?? 'unknown'
+                ]);
+                throw $e;
+            } finally {
+                if (isset($redis)) {
+                    try {
+                        @$redis->close();
+                    } catch (Exception $e) {
+                        // Ignore close errors
+                    }
+                }
+            }
+        } else {
+            throw new Exception('Invalid Redis URL format');
+        }
+    } else {
+        $health['checks']['redis']['status'] = STATUS_DISABLED;
+    }
+
+    // Security check with enhanced logging
     $clientIP = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
     $isValidOrigin = empty($origin) || in_array($origin, $allowedOrigins);
     
+    if (!$isValidOrigin) {
+        logHealthError('security_warning', 'Invalid origin detected', [
+            'origin' => $origin,
+            'client_ip' => $clientIP
+        ]);
+    }
+    
     $health['checks']['security'] = [
-        'status' => $isValidOrigin ? 'healthy' : 'warning',
+        'status' => $isValidOrigin ? STATUS_HEALTHY : 'warning',
         'client_ip' => $clientIP,
         'origin' => $origin,
         'render_ip' => false,
@@ -121,9 +246,15 @@ try {
 
     // Set overall status based on all checks
     $allHealthy = true;
-    foreach ($health['checks'] as $check) {
-        if ($check['status'] !== 'healthy' && $check['status'] !== 'connected') {
+    foreach ($health['checks'] as $checkName => $check) {
+        if ($check['status'] !== STATUS_HEALTHY && 
+            $check['status'] !== STATUS_CONNECTED && 
+            $check['status'] !== STATUS_DISABLED) {
             $allHealthy = false;
+            logHealthError('health_check_failed', "Service $checkName is not healthy", [
+                'status' => $check['status'],
+                'details' => $check
+            ]);
             break;
         }
     }
@@ -134,21 +265,30 @@ try {
     }
 
 } catch (Exception $e) {
-    error_log(sprintf(
-        "[Health Check] %s - Error: [%d] %s\nTrace: %s",
-        $requestId,
-        $e->getCode(),
-        $e->getMessage(),
-        $e->getTraceAsString()
-    ));
+    logHealthError('critical', $e->getMessage(), [
+        'code' => $e->getCode(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
+    ]);
     
     $health['status'] = 'unhealthy';
-    $health['checks']['database'] = [
-        'status' => 'error',
-        'error' => 'Database connection failed',
-        'error_code' => $e->getCode(),
-        'config' => $health['checks']['database']['config']
-    ];
+    
+    if (strpos(get_class($e), 'Redis') !== false || strpos($e->getMessage(), 'Redis') !== false) {
+        $health['checks']['redis'] = [
+            'status' => STATUS_ERROR,
+            'error' => 'Redis connection failed: ' . $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'config' => $health['checks']['redis']['config']
+        ];
+    } elseif ($e instanceof PDOException) {
+        $health['checks']['database'] = [
+            'status' => STATUS_ERROR,
+            'error' => 'Database connection failed',
+            'error_code' => $e->getCode(),
+            'config' => $health['checks']['database']['config']
+        ];
+    }
     
     http_response_code(503);
 }

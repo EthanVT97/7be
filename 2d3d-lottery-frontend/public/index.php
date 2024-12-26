@@ -83,10 +83,20 @@ if (preg_match('/^\/api\//', $_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI']
                     'Content-Type: application/json',
                     'User-Agent: 2D3D-Lottery-Frontend/1.0'
                 ]
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true
             ]
         ]);
 
         try {
+            // First check if backend is healthy
+            $healthCheck = @file_get_contents('https://twod3d-lottery-api-q68w.onrender.com/health', false, $ctx);
+            if ($healthCheck === false) {
+                throw new Exception('Backend health check failed');
+            }
+
             $response = @file_get_contents($apiUrl, false, $ctx);
             
             if ($response === false) {
@@ -95,7 +105,13 @@ if (preg_match('/^\/api\//', $_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI']
                 echo json_encode([
                     'success' => false,
                     'error' => 'Backend server is not responding',
-                    'message' => 'Please try again later'
+                    'message' => 'Please try again later',
+                    'status' => [
+                        'api_url' => $apiUrl,
+                        'health_check' => false,
+                        'timestamp' => date('Y-m-d H:i:s'),
+                        'error_info' => error_get_last()
+                    ]
                 ]);
                 exit();
             }
@@ -109,10 +125,61 @@ if (preg_match('/^\/api\//', $_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI']
             echo json_encode([
                 'success' => false,
                 'error' => 'Internal server error',
-                'message' => 'An unexpected error occurred'
+                'message' => 'An unexpected error occurred',
+                'details' => [
+                    'error_message' => $e->getMessage(),
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'api_status' => [
+                        'url' => $apiUrl,
+                        'health_check' => false
+                    ]
+                ]
             ]);
             exit();
         }
+    }
+
+    // Health check endpoint
+    if ($_SERVER['REQUEST_URI'] === '/health') {
+        $backendHealth = false;
+        $backendStatus = 'unknown';
+        
+        try {
+            $ctx = stream_context_create([
+                'http' => ['timeout' => 3],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true
+                ]
+            ]);
+            
+            $healthCheck = @file_get_contents('https://twod3d-lottery-api-q68w.onrender.com/health', false, $ctx);
+            if ($healthCheck !== false) {
+                $backendHealth = true;
+                $backendStatus = 'healthy';
+            }
+        } catch (Exception $e) {
+            $backendStatus = 'unhealthy';
+        }
+
+        $response = [
+            'status' => 'ok',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'environment' => getenv('APP_ENV') ?: 'production',
+            'backend' => [
+                'url' => 'https://twod3d-lottery-api-q68w.onrender.com',
+                'health' => $backendHealth,
+                'status' => $backendStatus,
+                'last_check' => date('Y-m-d H:i:s')
+            ],
+            'frontend' => [
+                'url' => 'https://twod3d.onrender.com',
+                'status' => 'running'
+            ]
+        ];
+
+        echo json_encode($response, JSON_PRETTY_PRINT);
+        exit();
     }
 
     // Default API response
