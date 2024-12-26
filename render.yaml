@@ -25,8 +25,12 @@ services:
   - type: web
     name: 2d3d-lottery-api
     env: php
-    buildCommand: composer install
+    buildCommand: |
+      apt-get update && apt-get install -y libpq-dev
+      docker-php-ext-install pdo pdo_pgsql
+      composer install
     startCommand: heroku-php-apache2 public/
+    healthCheckPath: /health.php
     envVars:
       - key: DB_HOST
         fromDatabase:
@@ -44,6 +48,10 @@ services:
         fromDatabase:
           name: 2d3d-lottery-db
           property: password
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_CONNECTION
+        value: pgsql
 
 databases:
   - name: 2d3d-lottery-db
