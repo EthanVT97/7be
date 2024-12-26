@@ -11,12 +11,13 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Serve existing files directly
-RewriteCond %{REQUEST_FILENAME} -f
+# Don't rewrite files or directories
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Route everything else through index.php
-RewriteRule ^ index.php [L]
+# Rewrite everything else to index.html to allow html5 state links
+RewriteRule ^ index.html [L]
 
 # Security headers
 Header set X-Content-Type-Options "nosniff"

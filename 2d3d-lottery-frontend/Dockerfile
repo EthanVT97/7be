@@ -18,12 +18,16 @@ COPY public/ /var/www/html/
 COPY .htaccess /var/www/html/.htaccess
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
+# Ensure index.html exists
+RUN touch /var/www/html/index.html
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
 # Configure Apache
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && echo "DirectoryIndex index.html" >> /etc/apache2/apache2.conf
 
 # Enable the site
 RUN a2ensite 000-default
