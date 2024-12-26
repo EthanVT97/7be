@@ -82,4 +82,8 @@ RUN chmod +x /usr/local/bin/start.sh
 # Copy custom PHP configuration
 COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
+# Install PostgreSQL client and PDO driver
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql
+
 CMD ["/usr/local/bin/start.sh"]

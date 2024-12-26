@@ -14,9 +14,10 @@ $health = [
 ];
 
 try {
-    $dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', 
+    $dsn = sprintf('pgsql:host=%s;dbname=%s;port=%s', 
         getenv('DB_HOST'), 
-        getenv('DB_DATABASE')
+        getenv('DB_DATABASE'),
+        getenv('DB_PORT') ?? '5432'
     );
     
     $pdo = new PDO($dsn, 
