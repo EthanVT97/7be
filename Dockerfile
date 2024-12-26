@@ -79,4 +79,7 @@ HEALTHCHECK --interval=30s --timeout=3s \
 COPY docker/start.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/start.sh
 
+# Copy custom PHP configuration
+COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
+
 CMD ["/usr/local/bin/start.sh"]
